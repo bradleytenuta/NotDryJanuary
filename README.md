@@ -101,6 +101,32 @@ Run unit/widget tests:
 flutter test
 ```
 
+## Launcher Icons
+
+This project uses flutter_launcher_icons to generate Android and iOS app icons.
+
+Current config lives in flutter_launcher_icons.yaml and points to:
+- Source icon: assets/icons/app-icon.png
+- Adaptive icon foreground: assets/icons/app-icon.png
+- Adaptive icon background: #FFFFFF
+
+### Generate icons
+
+1. Replace or update assets/icons/app-icon.png.
+2. Update flutter_launcher_icons.yaml if you want different paths or colors.
+3. Run:
+
+```bash
+flutter pub get
+dart run flutter_launcher_icons
+```
+
+### Notes
+
+- Generated Android icons are written under android/app/src/main/res.
+- Generated iOS icons are written under ios/Runner/Assets.xcassets/AppIcon.appiconset.
+- Re-run the command any time you change the source icon or icon config.
+
 ## Helpful Resources
 
 A few resources to get you started if this is your first Flutter project:
