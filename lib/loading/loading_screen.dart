@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:lottie/lottie.dart';
 import '../map/map_screen.dart';
 
 class AppStartupScreen extends StatefulWidget {
@@ -10,46 +11,46 @@ class AppStartupScreen extends StatefulWidget {
 }
 
 class _AppStartupScreenState extends State<AppStartupScreen> {
-  bool _showFlash = true;
+  bool _showLoading = true;
   bool _minDelayComplete = false;
   bool _mapReady = false;
   bool _modelReady = false;
-  Timer? _flashTimer;
+  Timer? _loadingTimer;
 
   @override
   void initState() {
     super.initState();
-    _flashTimer = Timer(const Duration(seconds: 5), () {
+    _loadingTimer = Timer(const Duration(seconds: 5), () {
       if (!mounted) return;
       _minDelayComplete = true;
-      _hideFlashIfReady();
+      _hideLoadingIfReady();
     });
   }
 
   void _onMapReady() {
     if (_mapReady) return;
     _mapReady = true;
-    _hideFlashIfReady();
+    _hideLoadingIfReady();
   }
 
   void _onModelReady() {
     if (_modelReady) return;
     _modelReady = true;
-    _hideFlashIfReady();
+    _hideLoadingIfReady();
   }
 
-  void _hideFlashIfReady() {
-    if (!_showFlash) return;
+  void _hideLoadingIfReady() {
+    if (!_showLoading) return;
     if (!_minDelayComplete || !_mapReady || !_modelReady) return;
     if (!mounted) return;
     setState(() {
-      _showFlash = false;
+      _showLoading = false;
     });
   }
 
   @override
   void dispose() {
-    _flashTimer?.cancel();
+    _loadingTimer?.cancel();
     super.dispose();
   }
 
@@ -62,11 +63,11 @@ class _AppStartupScreenState extends State<AppStartupScreen> {
           onModelReady: _onModelReady,
         ),
         IgnorePointer(
-          ignoring: !_showFlash,
+          ignoring: !_showLoading,
           child: AnimatedOpacity(
-            opacity: _showFlash ? 1 : 0,
+            opacity: _showLoading ? 1 : 0,
             duration: const Duration(milliseconds: 350),
-            child: const _FlashScreenOverlay(),
+            child: const _LoadingScreenOverlay(),
           ),
         ),
       ],
@@ -74,32 +75,20 @@ class _AppStartupScreenState extends State<AppStartupScreen> {
   }
 }
 
-class _FlashScreenOverlay extends StatelessWidget {
-  const _FlashScreenOverlay();
+class _LoadingScreenOverlay extends StatelessWidget {
+  const _LoadingScreenOverlay();
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: const Color(0xFFF7F3E8),
+      color: Colors.white,
       alignment: Alignment.center,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: const [
-          Text(
-            'notdryjanuary',
-            style: TextStyle(
-              fontSize: 34,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.5,
-              color: Color(0xFF1A3A2B),
-            ),
-          ),
-          SizedBox(height: 12),
-          CircularProgressIndicator(
-            strokeWidth: 3,
-            color: Color(0xFF1A3A2B),
-          ),
-        ],
+      child: Transform.scale(
+        scale: 2,
+        child: Lottie.asset(
+          'assets/lottie/liquid-fill.json',
+          fit: BoxFit.contain,
+        ),
       ),
     );
   }

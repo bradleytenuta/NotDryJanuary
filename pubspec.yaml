@@ -40,6 +40,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   model_viewer_plus: ^1.10.0
   flutter_compass: ^0.8.1
+  lottie: ^3.1.0
 
 dev_dependencies:
   flutter_test:
@@ -51,6 +52,7 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.3
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -64,7 +66,9 @@ flutter:
   uses-material-design: true
 
   assets:
+    - assets/icons/app-icon.png
     - assets/models/casual_character.glb
+    - assets/lottie/liquid-fill.json
 
   # To add assets to your application, add an assets section, like this:
   # assets:

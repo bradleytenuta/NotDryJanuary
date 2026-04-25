@@ -189,7 +189,7 @@ class _MapScreenState extends State<MapScreen> {
                           autoPlay: true,
                           animationName: _animationLogic.currentAnimationName,
                           animationCrossfadeDuration: 250,
-                          orientation: '180deg 180deg 0deg',
+                          orientation: '180deg ${180 + 30}deg 0deg', // Tilt the character model to match the Google Maps tilt.
                           cameraControls: false,
                           disableZoom: true,
                           backgroundColor: Colors.transparent,
