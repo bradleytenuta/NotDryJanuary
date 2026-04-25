@@ -239,7 +239,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "/bin/sh \"$FLUTTER_ROOT/packages/flutter_tools/bin/xcode_backend.sh\" embed_and_thin";
+			shellScript = "LOCAL_PROPERTIES=\"${SRCROOT}/../android/local.properties\"\nMAPS_API_KEY=\"$(grep -E '^MAPS_API_KEY=' \"$LOCAL_PROPERTIES\" | tail -n1 | cut -d'=' -f2- | tr -d '\\r')\"\nif [ -z \"$MAPS_API_KEY\" ]; then\n  echo \"error: MAPS_API_KEY is missing in $LOCAL_PROPERTIES\"\n  exit 1\nfi\n/usr/libexec/PlistBuddy -c \"Set :MAPS_API_KEY $MAPS_API_KEY\" \"${TARGET_BUILD_DIR}/${INFOPLIST_PATH}\" >/dev/null 2>&1 || /usr/libexec/PlistBuddy -c \"Add :MAPS_API_KEY string $MAPS_API_KEY\" \"${TARGET_BUILD_DIR}/${INFOPLIST_PATH}\"\n/bin/sh \"$FLUTTER_ROOT/packages/flutter_tools/bin/xcode_backend.sh\" embed_and_thin";
 		};
 		9740EEB61CF901F6004384FC /* Run Script */ = {
 			isa = PBXShellScriptBuildPhase;
