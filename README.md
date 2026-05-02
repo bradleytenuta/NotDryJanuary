@@ -138,3 +138,9 @@ A few resources to get you started if this is your first Flutter project:
 For help getting started with Flutter development, view the
 [online documentation](https://docs.flutter.dev/), which offers tutorials,
 samples, guidance on mobile development, and a full API reference.
+
+
+Assets from:
+
+- https://poly.pizza/bundle/Ultimate-Modular-Men-Pack-ZiH8muWqwQ
+- https://lottiefiles.com/free-animation/hop-beer-pyQd25r5hW

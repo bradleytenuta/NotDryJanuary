@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 import '../map/map_screen.dart';
+import '../map/providers/google_maps_flutter_provider.dart';
 
 class AppStartupScreen extends StatefulWidget {
   const AppStartupScreen({super.key});
@@ -59,6 +60,7 @@ class _AppStartupScreenState extends State<AppStartupScreen> {
     return Stack(
       children: [
         MapScreen(
+          mapProviderBuilder: buildGoogleMapsFlutterProvider,
           onMapReady: _onMapReady,
           onModelReady: _onModelReady,
         ),

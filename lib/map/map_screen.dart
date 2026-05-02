@@ -1,20 +1,24 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_compass/flutter_compass.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:model_viewer_plus/model_viewer_plus.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 import 'map_animation_logic.dart';
 import 'map_camera_logic.dart';
 import 'map_location_access.dart';
+import 'map_provider.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({
     super.key,
+    required this.mapProviderBuilder,
     this.onMapReady,
     this.onModelReady,
   });
 
+  final MapProviderBuilder mapProviderBuilder;
   final VoidCallback? onMapReady;
   final VoidCallback? onModelReady;
 
@@ -22,11 +26,14 @@ class MapScreen extends StatefulWidget {
   State<MapScreen> createState() => _MapScreenState();
 }
 
-class _MapScreenState extends State<MapScreen> {
-  GoogleMapController? _controller;
+class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
+  MapProviderController? _mapController;
   StreamSubscription<Position>? _positionStream;
   StreamSubscription<CompassEvent>? _compassStream;
-  LatLng? _playerLatLng;
+  double? _playerLatitude;
+  double? _playerLongitude;
+  bool _isCameraUpdateInFlight = false;
+  bool _hasPendingCameraUpdate = false;
   bool _hasSentMapReady = false;
   bool _hasSentModelReady = false;
   final MapAnimationLogic _animationLogic = MapAnimationLogic();
@@ -44,7 +51,21 @@ class _MapScreenState extends State<MapScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    WakelockPlus.enable();
     _startTracking();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      WakelockPlus.enable();
+    } else if (state == AppLifecycleState.inactive ||
+        state == AppLifecycleState.paused ||
+        state == AppLifecycleState.detached ||
+        state == AppLifecycleState.hidden) {
+      WakelockPlus.disable();
+    }
   }
 
   void _startTracking() async {
@@ -59,15 +80,9 @@ class _MapScreenState extends State<MapScreen> {
           accuracy: LocationAccuracy.high,
         ),
       );
-      final LatLng initialLatLng =
-          LatLng(initialPosition.latitude, initialPosition.longitude);
-      _playerLatLng = initialLatLng;
-      await _cameraLogic.updateCamera(
-        controller: _controller,
-        target: initialLatLng,
-        tilt: _tilt,
-        zoom: _zoom,
-      );
+      _playerLatitude = initialPosition.latitude;
+      _playerLongitude = initialPosition.longitude;
+      await _updateCameraToPlayer();
       final String previousAnimation = _animationLogic.currentAnimationName;
       _animationLogic.updateAnimation(initialPosition, DateTime.now());
       if (previousAnimation != _animationLogic.currentAnimationName) {
@@ -81,12 +96,8 @@ class _MapScreenState extends State<MapScreen> {
 
     // 3. Listen to position & heading changes continuously.
     _positionStream = Geolocator.getPositionStream(
-      locationSettings: const LocationSettings(
-        accuracy: LocationAccuracy.high,
-        distanceFilter: 1, // More responsive movement updates.
-      ),
+      locationSettings: _buildLocationSettings(),
     ).listen((Position position) async {
-      final LatLng playerLatLng = LatLng(position.latitude, position.longitude);
       final double fallbackHeading = _cameraLogic.sanitizeHeading(position.heading);
 
       _cameraLogic.setInitialBearingIfUnset(fallbackHeading);
@@ -96,20 +107,51 @@ class _MapScreenState extends State<MapScreen> {
       if (previousAnimation != _animationLogic.currentAnimationName) {
         setState(() {});
       }
-      _playerLatLng = playerLatLng;
-
-      await _cameraLogic.updateCamera(
-        controller: _controller,
-        target: playerLatLng,
-        tilt: _tilt,
-        zoom: _zoom,
+      final ({double latitude, double longitude}) smoothedPosition =
+          _cameraLogic.smoothPlayerPosition(
+        latitude: position.latitude,
+        longitude: position.longitude,
+        horizontalAccuracyMeters: position.accuracy,
       );
+      _playerLatitude = smoothedPosition.latitude;
+      _playerLongitude = smoothedPosition.longitude;
+
+      await _updateCameraToPlayer();
     });
+  }
+
+  LocationSettings _buildLocationSettings() {
+    if (Platform.isAndroid) {
+      return AndroidSettings(
+        accuracy: LocationAccuracy.bestForNavigation,
+        distanceFilter: 0,
+        intervalDuration: const Duration(milliseconds: 250),
+      );
+    }
+
+    if (Platform.isIOS) {
+      return AppleSettings(
+        accuracy: LocationAccuracy.bestForNavigation,
+        distanceFilter: 0,
+        activityType: ActivityType.fitness,
+        pauseLocationUpdatesAutomatically: false,
+      );
+    }
+
+    return const LocationSettings(
+      accuracy: LocationAccuracy.bestForNavigation,
+      distanceFilter: 0,
+    );
   }
 
   void _startCompassTracking() {
     _compassStream = FlutterCompass.events?.listen((CompassEvent event) async {
-      if (!mounted || _playerLatLng == null || _controller == null) return;
+      if (!mounted ||
+          _playerLatitude == null ||
+          _playerLongitude == null ||
+          _mapController == null) {
+        return;
+      }
 
       final double? heading = event.heading;
       if (heading == null || heading.isNaN || heading.isInfinite) return;
@@ -120,13 +162,54 @@ class _MapScreenState extends State<MapScreen> {
       }
 
       _cameraLogic.updateBearingFromCompass(heading);
-      await _cameraLogic.updateCamera(
-        controller: _controller,
-        target: _playerLatLng!,
+      await _updateCameraToPlayer();
+    });
+  }
+
+  Future<void> _updateCameraToPlayer() async {
+    if (_isCameraUpdateInFlight) {
+      _hasPendingCameraUpdate = true;
+      return;
+    }
+
+    final MapProviderController? controller = _mapController;
+    final double? latitude = _playerLatitude;
+    final double? longitude = _playerLongitude;
+
+    if (controller == null || latitude == null || longitude == null) {
+      return;
+    }
+
+    _isCameraUpdateInFlight = true;
+    try {
+      await controller.moveCamera(
+        latitude: latitude,
+        longitude: longitude,
         tilt: _tilt,
         zoom: _zoom,
+        bearing: _cameraLogic.cameraBearingDegrees,
       );
-    });
+    } finally {
+      _isCameraUpdateInFlight = false;
+    }
+
+    if (_hasPendingCameraUpdate) {
+      _hasPendingCameraUpdate = false;
+      await _updateCameraToPlayer();
+    }
+  }
+
+  void _onProviderControllerCreated(MapProviderController controller) {
+    _mapController = controller;
+    _updateCameraToPlayer();
+  }
+
+  void _onProviderMapReady() {
+    if (_hasSentMapReady) {
+      return;
+    }
+    _hasSentMapReady = true;
+    widget.onMapReady?.call();
   }
 
   @override
@@ -134,35 +217,13 @@ class _MapScreenState extends State<MapScreen> {
     return Scaffold(
       body: Stack(
         children: [
-          GoogleMap(
-            initialCameraPosition: const CameraPosition(
-              target: LatLng(0, 0),
-              zoom: _zoom,
-              tilt: _tilt,
-            ),
-            myLocationEnabled: false,
-            myLocationButtonEnabled: false, // Cleaner UI
-            compassEnabled: false,
-            zoomControlsEnabled: false,
-            zoomGesturesEnabled: false,
-            scrollGesturesEnabled: false,
-            rotateGesturesEnabled: false,
-            tiltGesturesEnabled: false,
-            onMapCreated: (GoogleMapController controller) {
-              _controller = controller;
-              if (!_hasSentMapReady) {
-                _hasSentMapReady = true;
-                widget.onMapReady?.call();
-              }
-              if (_playerLatLng != null) {
-                _cameraLogic.updateCamera(
-                  controller: _controller,
-                  target: _playerLatLng!,
-                  tilt: _tilt,
-                  zoom: _zoom,
-                );
-              }
-            },
+          widget.mapProviderBuilder(
+            onControllerCreated: _onProviderControllerCreated,
+            onMapReady: _onProviderMapReady,
+            initialLatitude: 0,
+            initialLongitude: 0,
+            initialZoom: _zoom,
+            initialTilt: _tilt,
           ),
           Align(
             alignment: Alignment.center,
@@ -189,7 +250,7 @@ class _MapScreenState extends State<MapScreen> {
                           autoPlay: true,
                           animationName: _animationLogic.currentAnimationName,
                           animationCrossfadeDuration: 250,
-                          orientation: '180deg ${180 + 30}deg 0deg', // Tilt the character model to match the Google Maps tilt.
+                          orientation: '180deg ${180 + 30}deg 0deg', // Tilt the character model to match the maps tilt.
                           cameraControls: false,
                           disableZoom: true,
                           backgroundColor: Colors.transparent,
@@ -213,6 +274,8 @@ class _MapScreenState extends State<MapScreen> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    WakelockPlus.disable();
     _positionStream?.cancel();
     _compassStream?.cancel();
     super.dispose();
