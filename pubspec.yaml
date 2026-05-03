@@ -69,7 +69,17 @@ flutter:
   assets:
     - assets/icons/app-icon.png
     - assets/icons/branding/greene-king.png
+    - assets/models/adventurer.glb
+    - assets/models/astronaut.glb
+    - assets/models/beach_character.glb
+    - assets/models/business_man.glb
     - assets/models/casual_character.glb
+    - assets/models/farmer.glb
+    - assets/models/hoodie_character.glb
+    - assets/models/king.glb
+    - assets/models/punk.glb
+    - assets/models/swat.glb
+    - assets/models/worker.glb
     - assets/lottie/liquid-fill.json
     - assets/geojson/london-pubs.geojson
 

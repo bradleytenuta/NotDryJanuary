@@ -7,8 +7,11 @@ import 'package:model_viewer_plus/model_viewer_plus.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import '../character/animation.dart';
 import '../features/pub_cache.dart';
+import '../ui/map_action_button.dart';
 import '../ui/mapbox.dart';
 import '../ui/pub_details_modal.dart';
+import '../ui/visited_pubs_page.dart';
+import '../user_session_store.dart';
 import 'camera_logic.dart';
 import '../debug/location_override.dart';
 import 'location_access.dart';
@@ -42,8 +45,8 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   bool _isPubSheetOpen = false;
   final MapAnimationLogic _animationLogic = MapAnimationLogic();
   final MapCameraLogic _cameraLogic = MapCameraLogic();
+  String _characterModelPath = 'assets/models/casual_character.glb';
 
-  static const String _characterModelPath = 'assets/models/casual_character.glb';
   static const double _avatarWidth = 90;
   static const double _avatarHeight = 110;
   static const double _modelTopCrop = 5;
@@ -56,7 +59,21 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     WakelockPlus.enable();
+    _loadCharacterModelPathFromSession();
     _startTracking();
+  }
+
+  Future<void> _loadCharacterModelPathFromSession() async {
+    final UserSessionData session = await UserSessionStore.instance.loadOrCreate();
+    final String modelPath = 'assets/models/${session.character}.glb';
+
+    if (!mounted || _characterModelPath == modelPath) {
+      return;
+    }
+
+    setState(() {
+      _characterModelPath = modelPath;
+    });
   }
 
   @override
@@ -286,7 +303,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                         height: _avatarHeight + _modelTopCrop,
                         child: ModelViewer(
                           key: ValueKey<String>(
-                            _animationLogic.currentAnimationName,
+                            '$_characterModelPath:${_animationLogic.currentAnimationName}',
                           ),
                           src: _characterModelPath,
                           alt: 'Player character',
@@ -311,6 +328,17 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                 ),
               ),
             ),
+          ),
+          MapActionButton(
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const VisitedPubsPage(),
+                ),
+              ).then((_) {
+                _loadCharacterModelPathFromSession();
+              });
+            },
           ),
         ],
       ),

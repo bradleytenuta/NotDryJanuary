@@ -110,4 +110,24 @@ class UserSessionStore {
     final File file = await _sessionFile();
     await _writeSession(file, updatedSession);
   }
+
+  Future<void> updateCharacter(String character) async {
+    final String normalizedCharacter = character.trim();
+    if (normalizedCharacter.isEmpty) {
+      return;
+    }
+
+    final UserSessionData session = await loadOrCreate();
+    if (session.character == normalizedCharacter) {
+      return;
+    }
+
+    final UserSessionData updatedSession = UserSessionData(
+      character: normalizedCharacter,
+      visitedPubs: session.visitedPubs,
+    );
+
+    final File file = await _sessionFile();
+    await _writeSession(file, updatedSession);
+  }
 }
