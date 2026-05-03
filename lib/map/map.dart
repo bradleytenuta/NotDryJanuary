@@ -6,6 +6,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:model_viewer_plus/model_viewer_plus.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import '../character/animation.dart';
+import '../features/pub_cache.dart';
 import '../ui/mapbox.dart';
 import '../ui/pub_details_modal.dart';
 import 'camera_logic.dart';
@@ -48,7 +49,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   static const double _modelTopCrop = 5;
 
   static const double _tilt = 60.0;
-  static const double _zoom = 18.5;
+  static const double _zoom = 17;
 
   @override
   void initState() {
@@ -87,6 +88,11 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       );
       _playerLatitude = trackingLocation.latitude;
       _playerLongitude = trackingLocation.longitude;
+      await PubsGeoJsonCache.instance.buildStartupNearbyCaches(
+        userLatitude: trackingLocation.latitude,
+        userLongitude: trackingLocation.longitude,
+      );
+      unawaited(_refreshNearbyPubsForPlayerLocation());
       await _updateCameraToPlayer();
       final String previousAnimation = _animationLogic.currentAnimationName;
       _animationLogic.updateAnimation(initialPosition, DateTime.now());
@@ -119,6 +125,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       _playerLatitude = trackingLocation.latitude;
       _playerLongitude = trackingLocation.longitude;
 
+      unawaited(_refreshNearbyPubsForPlayerLocation());
       await _updateCameraToPlayer();
     });
   }
@@ -199,7 +206,23 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
 
   void _onProviderControllerCreated(MapboxMapController controller) {
     _mapController = controller;
+    unawaited(_refreshNearbyPubsForPlayerLocation());
     _updateCameraToPlayer();
+  }
+
+  Future<void> _refreshNearbyPubsForPlayerLocation() async {
+    final MapboxMapController? controller = _mapController;
+    final double? latitude = _playerLatitude;
+    final double? longitude = _playerLongitude;
+
+    if (controller == null || latitude == null || longitude == null) {
+      return;
+    }
+
+    await controller.refreshNearbyPubsIfNeeded(
+      latitude: latitude,
+      longitude: longitude,
+    );
   }
 
   void _onProviderMapReady() {

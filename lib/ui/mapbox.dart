@@ -1,9 +1,14 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart' as geo;
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart' as mbx;
 
+import '../debug/location_override.dart';
 import '../domain/pub_feature.dart';
+import '../features/feature_service.dart';
+import '../features/pub_cache.dart';
+import '../user_session_store.dart';
 import 'nearby_pubs.dart';
 
 export '../domain/pub_feature.dart';
@@ -14,6 +19,14 @@ class MapboxMapController {
   MapboxMapController(this._mapboxMap);
 
   final mbx.MapboxMap _mapboxMap;
+  bool _isMapLoaded = false;
+  bool _isNearbyPubsRefreshInFlight = false;
+  ({double latitude, double longitude})? _lastVisitedPubsCheckLocation;
+  ({double latitude, double longitude})? _nearbyPubsOrigin;
+  ({double latitude, double longitude})? _pendingNearbyPubsLocation;
+
+  static const double _visitedPubsCheckDistanceMeters = 5;
+  static const int _maxVisitedPubsToAddPerCheck = 5;
 
   Future<void> moveCamera({
     required double latitude,
@@ -34,6 +47,161 @@ class MapboxMapController {
       ),
     );
   }
+
+  Future<void> markMapLoaded() async {
+    _isMapLoaded = true;
+
+    ({double latitude, double longitude})? pendingLocation =
+        _pendingNearbyPubsLocation;
+    pendingLocation ??= await _resolveCurrentTrackingLocation();
+
+    if (pendingLocation == null) {
+      return;
+    }
+
+    _pendingNearbyPubsLocation = null;
+    await refreshNearbyPubsIfNeeded(
+      latitude: pendingLocation.latitude,
+      longitude: pendingLocation.longitude,
+    );
+  }
+
+  Future<void> refreshNearbyPubsIfNeeded({
+    required double latitude,
+    required double longitude,
+  }) async {
+    if (!_isMapLoaded) {
+      _pendingNearbyPubsLocation = (latitude: latitude, longitude: longitude);
+      return;
+    }
+
+    if (_isNearbyPubsRefreshInFlight) {
+      _pendingNearbyPubsLocation = (latitude: latitude, longitude: longitude);
+      return;
+    }
+
+    _isNearbyPubsRefreshInFlight = true;
+    try {
+      await _recordVisitedPubsAtLocation(
+        latitude: latitude,
+        longitude: longitude,
+      );
+
+      final ({double latitude, double longitude})? origin = _nearbyPubsOrigin;
+
+      if (origin == null) {
+        final bool didUpdateNearbyFeatures = await addNearbyPubFeatures(
+          _mapboxMap,
+          latitude: latitude,
+          longitude: longitude,
+          forceRefresh: true,
+        );
+        if (didUpdateNearbyFeatures) {
+          _nearbyPubsOrigin = (latitude: latitude, longitude: longitude);
+        }
+      } else {
+        final double distanceMoved = geo.Geolocator.distanceBetween(
+          origin.latitude,
+          origin.longitude,
+          latitude,
+          longitude,
+        );
+
+        if (distanceMoved >= nearbyPubsRefreshDistanceMeters) {
+          final bool didUpdateNearbyFeatures = await addNearbyPubFeatures(
+            _mapboxMap,
+            latitude: latitude,
+            longitude: longitude,
+            forceRefresh: true,
+          );
+          if (didUpdateNearbyFeatures) {
+            _nearbyPubsOrigin = (latitude: latitude, longitude: longitude);
+          }
+        }
+      }
+    } finally {
+      _isNearbyPubsRefreshInFlight = false;
+    }
+
+    final ({double latitude, double longitude})? pendingLocation =
+        _pendingNearbyPubsLocation;
+    if (pendingLocation == null) {
+      return;
+    }
+
+    _pendingNearbyPubsLocation = null;
+    await refreshNearbyPubsIfNeeded(
+      latitude: pendingLocation.latitude,
+      longitude: pendingLocation.longitude,
+    );
+  }
+
+  Future<void> _recordVisitedPubsAtLocation({
+    required double latitude,
+    required double longitude,
+  }) async {
+    final ({double latitude, double longitude})? lastCheckedLocation =
+        _lastVisitedPubsCheckLocation;
+    if (lastCheckedLocation != null) {
+      final double distanceSinceLastCheck = geo.Geolocator.distanceBetween(
+        lastCheckedLocation.latitude,
+        lastCheckedLocation.longitude,
+        latitude,
+        longitude,
+      );
+
+      if (distanceSinceLastCheck < _visitedPubsCheckDistanceMeters) {
+        return;
+      }
+    }
+
+    _lastVisitedPubsCheckLocation = (latitude: latitude, longitude: longitude);
+
+    final List<PubFeature> candidateFeatures =
+        await PubsGeoJsonCache.instance.loadNearbyFeatures(
+      userLatitude: latitude,
+      userLongitude: longitude,
+      radiusMeters: PubsGeoJsonCache.visitedCheckRadiusMeters,
+      refreshDistanceMeters: _visitedPubsCheckDistanceMeters,
+    );
+
+    final List<String> visitedPubIds = FeatureService.findContainingFeatureIds(
+      features: candidateFeatures,
+      userLatitude: latitude,
+      userLongitude: longitude,
+    );
+
+    if (visitedPubIds.isEmpty) {
+      return;
+    }
+
+    if (visitedPubIds.length > _maxVisitedPubsToAddPerCheck) {
+      debugPrint(
+        'Mapbox visited pubs guard: refusing to add ${visitedPubIds.length} IDs in one check at '
+        '($latitude, $longitude).',
+      );
+      return;
+    }
+
+    await UserSessionStore.instance.addVisitedPubs(visitedPubIds);
+  }
+
+  Future<({double latitude, double longitude})?> _resolveCurrentTrackingLocation() async {
+    try {
+      final geo.Position position = await geo.Geolocator.getCurrentPosition(
+        locationSettings: const geo.LocationSettings(
+          accuracy: geo.LocationAccuracy.high,
+        ),
+      );
+
+      return resolveTrackingLocation(
+        latitude: position.latitude,
+        longitude: position.longitude,
+      );
+    } catch (_) {
+      return null;
+    }
+  }
 }
 
 typedef MapboxMapProviderBuilder = Widget Function({
@@ -47,6 +215,7 @@ typedef MapboxMapProviderBuilder = Widget Function({
 });
 
 const String _mapboxStandardBasemapImportId = 'basemap';
+const double _maxZoomOutLevel = 16;
 
 Widget buildMapboxMapsFlutterProvider({
   required ValueChanged<MapboxMapController> onControllerCreated,
@@ -58,6 +227,8 @@ Widget buildMapboxMapsFlutterProvider({
   required double initialTilt,
 }) {
   mbx.MapboxMap? createdMap;
+  MapboxMapController? createdController;
+  bool isMapLoaded = false;
 
   return mbx.MapWidget(
     // ignore: deprecated_member_use
@@ -70,6 +241,21 @@ Widget buildMapboxMapsFlutterProvider({
     ),
     onMapCreated: (mbx.MapboxMap mapboxMap) async {
       createdMap = mapboxMap;
+
+      // Create controller before async map setup so onMapLoaded cannot outrun it.
+      createdController = MapboxMapController(mapboxMap);
+      onControllerCreated(createdController!);
+
+      if (isMapLoaded) {
+        unawaited(createdController!.markMapLoaded());
+      }
+
+      await mapboxMap.setBounds(
+        mbx.CameraBoundsOptions(
+          minZoom: _maxZoomOutLevel,
+        ),
+      );
+
       await mapboxMap.gestures.updateSettings(
         mbx.GesturesSettings(
           pinchToZoomEnabled: true,
@@ -89,14 +275,12 @@ Widget buildMapboxMapsFlutterProvider({
       await mapboxMap.scaleBar.updateSettings(
         mbx.ScaleBarSettings(enabled: false),
       );
-
-      onControllerCreated(MapboxMapController(mapboxMap));
     },
     onMapLoadedListener: (_) {
-      if (createdMap != null) {
-        unawaited(() async {
-          await addNearbyPubFeatures(createdMap!);
-        }());
+      isMapLoaded = true;
+      final MapboxMapController? controller = createdController;
+      if (controller != null) {
+        unawaited(controller.markMapLoaded());
       }
       onMapReady();
     },
@@ -136,7 +320,11 @@ Future<PubFeature?> _getTappedPubFeatureDetails({
       mbx.RenderedQueryGeometry.fromScreenCoordinate(
         gestureContext.touchPosition,
       ),
-      mbx.RenderedQueryOptions(layerIds: <String?>[nearbyPubsLayerId]),
+      mbx.RenderedQueryOptions(
+        layerIds: nearbyPubsLayerIds.map<String?>((String id) => id).toList(
+              growable: false,
+            ),
+      ),
     );
 
     final mbx.QueriedRenderedFeature? firstFeature = queriedFeatures
