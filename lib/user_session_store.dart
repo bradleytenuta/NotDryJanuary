@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 
 class UserSessionData {
@@ -52,12 +53,17 @@ class UserSessionStore {
     character: 'casual_character',
     visitedPubs: <String>[],
   );
+  final ValueNotifier<int> _visitedPubsCountNotifier = ValueNotifier<int>(0);
+
+  ValueListenable<int> get visitedPubsCountListenable =>
+      _visitedPubsCountNotifier;
 
   Future<UserSessionData> loadOrCreate() async {
     final File file = await _sessionFile();
 
     if (!await file.exists()) {
       await _writeSession(file, defaultSession);
+      _visitedPubsCountNotifier.value = defaultSession.visitedPubs.length;
       return defaultSession;
     }
 
@@ -69,9 +75,11 @@ class UserSessionStore {
 
       // Ensure the file is normalized with expected keys and defaults.
       await _writeSession(file, session);
+      _visitedPubsCountNotifier.value = session.visitedPubs.length;
       return session;
     } catch (_) {
       await _writeSession(file, defaultSession);
+      _visitedPubsCountNotifier.value = defaultSession.visitedPubs.length;
       return defaultSession;
     }
   }
@@ -109,6 +117,7 @@ class UserSessionStore {
 
     final File file = await _sessionFile();
     await _writeSession(file, updatedSession);
+    _visitedPubsCountNotifier.value = updatedSession.visitedPubs.length;
   }
 
   Future<void> updateCharacter(String character) async {

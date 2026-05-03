@@ -12,6 +12,7 @@ import '../ui/mapbox.dart';
 import '../ui/pub_details_modal.dart';
 import '../ui/credits_page.dart';
 import '../ui/visited_pubs_page.dart';
+import '../ui/visited_pubs_chip.dart';
 import '../user_session_store.dart';
 import 'camera_logic.dart';
 import '../debug/location_override.dart';
@@ -60,6 +61,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     WakelockPlus.enable();
+    UserSessionStore.instance.loadOrCreate();
     _loadCharacterModelPathFromSession();
     _startTracking();
   }
@@ -330,6 +332,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
               ),
             ),
           ),
+          const VisitedPubsChip(),
           MapActionButton(
             heroTag: 'map-account-action-button',
             icon: Icons.manage_accounts,
