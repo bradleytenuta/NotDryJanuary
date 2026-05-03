@@ -1,6 +1,6 @@
 // Sets the default location to the PA Office in London.
 // Set to false to use true location.
-const bool useDebugLocationOverride = true;
+const bool useDebugLocationOverride = false;
 const double debugOverrideLatitude = 51.497819;
 const double debugOverrideLongitude = -0.142396;
 
