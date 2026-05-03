@@ -10,6 +10,7 @@ import '../features/pub_cache.dart';
 import '../ui/map_action_button.dart';
 import '../ui/mapbox.dart';
 import '../ui/pub_details_modal.dart';
+import '../ui/credits_page.dart';
 import '../ui/visited_pubs_page.dart';
 import '../user_session_store.dart';
 import 'camera_logic.dart';
@@ -330,6 +331,9 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
             ),
           ),
           MapActionButton(
+            heroTag: 'map-account-action-button',
+            icon: Icons.manage_accounts,
+            tooltip: 'Open account',
             onPressed: () {
               Navigator.of(context).push(
                 MaterialPageRoute<void>(
@@ -338,6 +342,19 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
               ).then((_) {
                 _loadCharacterModelPathFromSession();
               });
+            },
+          ),
+          MapActionButton(
+            heroTag: 'map-credits-action-button',
+            icon: Icons.info_outline,
+            tooltip: 'Open credits',
+            topOffset: 84,
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const CreditsPage(),
+                ),
+              );
             },
           ),
         ],
