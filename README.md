@@ -39,6 +39,12 @@ flutter pub get
 flutter devices
 ```
 
+6. Configure your Mapbox token and run with a Dart define:
+
+```bash
+flutter run --dart-define=MAPS_API_KEY=YOUR_MAPBOX_PUBLIC_TOKEN
+```
+
 ## Development Commands
 
 ### Run the app
@@ -58,7 +64,7 @@ flutter devices
 Run on the connected Android device with ID 39201JEHN06666:
 
 ```bash
-flutter run -d 39201JEHN06666
+flutter run -d 39201JEHN06666 --dart-define=xxx
 ```
 
 ### Compile and Build

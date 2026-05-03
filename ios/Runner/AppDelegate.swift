@@ -1,5 +1,4 @@
 import Flutter
-import GoogleMaps
 import UIKit
 
 @main
@@ -13,15 +12,5 @@ import UIKit
 
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
-
-    guard
-      let mapsApiKey = Bundle.main.object(forInfoDictionaryKey: "MAPS_API_KEY") as? String,
-      !mapsApiKey.isEmpty
-    else {
-      assertionFailure("MAPS_API_KEY missing. Add MAPS_API_KEY to android/local.properties.")
-      return
-    }
-
-    GMSServices.provideAPIKey(mapsApiKey)
   }
 }

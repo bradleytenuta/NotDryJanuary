@@ -11,9 +11,6 @@ val localProperties = Properties().apply {
     rootProject.file("local.properties").inputStream().use { load(it) }
 }
 
-val mapsApiKey = localProperties.getProperty("MAPS_API_KEY")
-    ?: throw GradleException("MAPS_API_KEY is not set in android/local.properties")
-
 android {
     namespace = "com.example.notdryjanuary"
     compileSdk = flutter.compileSdkVersion
@@ -37,7 +34,6 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
-        manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey
     }
 
     buildTypes {
