@@ -5,11 +5,12 @@ import 'package:flutter_compass/flutter_compass.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:model_viewer_plus/model_viewer_plus.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
-import 'map_animation_logic.dart';
-import 'map_camera_logic.dart';
-import 'debug_location_override.dart';
-import 'map_location_access.dart';
-import 'map_provider.dart';
+import '../character/animation.dart';
+import '../ui/mapbox.dart';
+import '../ui/pub_details_modal.dart';
+import 'camera_logic.dart';
+import '../debug/location_override.dart';
+import 'location_access.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({
@@ -19,7 +20,7 @@ class MapScreen extends StatefulWidget {
     this.onModelReady,
   });
 
-  final MapProviderBuilder mapProviderBuilder;
+  final MapboxMapProviderBuilder mapProviderBuilder;
   final VoidCallback? onMapReady;
   final VoidCallback? onModelReady;
 
@@ -28,7 +29,7 @@ class MapScreen extends StatefulWidget {
 }
 
 class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
-  MapProviderController? _mapController;
+  MapboxMapController? _mapController;
   StreamSubscription<Position>? _positionStream;
   StreamSubscription<CompassEvent>? _compassStream;
   double? _playerLatitude;
@@ -46,9 +47,8 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   static const double _avatarHeight = 110;
   static const double _modelTopCrop = 5;
 
-  // The "3rd Person" camera settings
-  static const double _tilt = 60.0; // Angled view
-  static const double _zoom = 18.5; // Close to ground
+  static const double _tilt = 60.0;
+  static const double _zoom = 18.5;
 
   @override
   void initState() {
@@ -71,12 +71,10 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   }
 
   void _startTracking() async {
-    // 1. Ensure location services and permissions are available.
     final bool canTrack = await ensureLocationAccess();
     if (!canTrack) return;
 
     try {
-      // 2. Prime with the current location so camera can snap immediately.
       final Position initialPosition = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(
           accuracy: LocationAccuracy.high,
@@ -101,7 +99,6 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
 
     _startCompassTracking();
 
-    // 3. Listen to position & heading changes continuously.
     _positionStream = Geolocator.getPositionStream(
       locationSettings: _buildLocationSettings(),
     ).listen((Position position) async {
@@ -173,7 +170,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       return;
     }
 
-    final MapProviderController? controller = _mapController;
+    final MapboxMapController? controller = _mapController;
     final double? latitude = _playerLatitude;
     final double? longitude = _playerLongitude;
 
@@ -200,7 +197,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     }
   }
 
-  void _onProviderControllerCreated(MapProviderController controller) {
+  void _onProviderControllerCreated(MapboxMapController controller) {
     _mapController = controller;
     _updateCameraToPlayer();
   }
@@ -213,7 +210,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     widget.onMapReady?.call();
   }
 
-  Future<void> _onPubFeatureTapped(PubFeatureDetails featureDetails) async {
+  Future<void> _onPubFeatureTapped(PubFeature featureDetails) async {
     if (!mounted) {
       return;
     }
@@ -226,14 +223,9 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     }
 
     _isPubSheetOpen = true;
-    await showModalBottomSheet<void>(
+    await showPubDetailsModal(
       context: context,
-      isDismissible: true,
-      enableDrag: true,
-      useSafeArea: true,
-      builder: (BuildContext context) {
-        return _PubDetailsBottomSheet(featureDetails: featureDetails);
-      },
+      featureDetails: featureDetails,
     );
 
     _isPubSheetOpen = false;
@@ -247,7 +239,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
           widget.mapProviderBuilder(
             onControllerCreated: _onProviderControllerCreated,
             onMapReady: _onProviderMapReady,
-            onPubFeatureTapped: (PubFeatureDetails details) {
+            onPubFeatureTapped: (PubFeature details) {
               unawaited(_onPubFeatureTapped(details));
             },
             initialLatitude: 0,
@@ -280,7 +272,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                           autoPlay: true,
                           animationName: _animationLogic.currentAnimationName,
                           animationCrossfadeDuration: 250,
-                          orientation: '180deg ${180 + 30}deg 0deg', // Tilt the character model to match the maps tilt.
+                          orientation: '180deg ${180 + 30}deg 0deg',
                           cameraControls: false,
                           disableZoom: true,
                           backgroundColor: Colors.transparent,
@@ -309,39 +301,5 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     _positionStream?.cancel();
     _compassStream?.cancel();
     super.dispose();
-  }
-
-}
-
-class _PubDetailsBottomSheet extends StatelessWidget {
-  const _PubDetailsBottomSheet({required this.featureDetails});
-
-  final PubFeatureDetails featureDetails;
-
-  @override
-  Widget build(BuildContext context) {
-    final String address =
-        '${featureDetails.city}, ${featureDetails.street}, ${featureDetails.houseNumber} - ${featureDetails.postcode}';
-
-    return Material(
-      color: Colors.white,
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              if (featureDetails.brand != null && featureDetails.brand!.isNotEmpty)
-                Text('Brand: ${featureDetails.brand}'),
-              Text('Name: ${featureDetails.name}'),
-              Text('Address: $address'),
-              Text('Wheelchair access: ${featureDetails.wheelchair}'),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 }
