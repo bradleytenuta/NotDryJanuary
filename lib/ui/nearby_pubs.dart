@@ -11,11 +11,24 @@ import '../user_session_store.dart';
 
 const String visitedNearbyPubsSourceId = 'nearby-pubs-visited-source';
 const String unvisitedNearbyPubsSourceId = 'nearby-pubs-unvisited-source';
-const String visitedNearbyPubsLayerId = 'nearby-pubs-visited-3d-layer';
-const String unvisitedNearbyPubsLayerId = 'nearby-pubs-unvisited-3d-layer';
+const String visitedNearbyPubsBottomLayerId =
+  'nearby-pubs-visited-3d-bottom-layer';
+const String visitedNearbyPubsMiddleLayerId =
+  'nearby-pubs-visited-3d-middle-layer';
+const String visitedNearbyPubsTopLayerId = 'nearby-pubs-visited-3d-top-layer';
+const String unvisitedNearbyPubsBottomLayerId =
+  'nearby-pubs-unvisited-3d-bottom-layer';
+const String unvisitedNearbyPubsMiddleLayerId =
+  'nearby-pubs-unvisited-3d-middle-layer';
+const String unvisitedNearbyPubsTopLayerId =
+  'nearby-pubs-unvisited-3d-top-layer';
 const List<String> nearbyPubsLayerIds = <String>[
-  visitedNearbyPubsLayerId,
-  unvisitedNearbyPubsLayerId,
+  visitedNearbyPubsBottomLayerId,
+  visitedNearbyPubsMiddleLayerId,
+  visitedNearbyPubsTopLayerId,
+  unvisitedNearbyPubsBottomLayerId,
+  unvisitedNearbyPubsMiddleLayerId,
+  unvisitedNearbyPubsTopLayerId,
 ];
 
 const double nearbyPubsRefreshDistanceMeters = 500;
@@ -110,51 +123,97 @@ Future<bool> addNearbyPubFeatures(
       );
     }
 
-    final mbx.FillExtrusionLayer visitedLayer = mbx.FillExtrusionLayer(
-      id: visitedNearbyPubsLayerId,
+    await _upsertExtrusionLayer(
+      style: style,
+      layerId: visitedNearbyPubsBottomLayerId,
       sourceId: visitedNearbyPubsSourceId,
-      fillExtrusionColor: _visitedExtrusionColor,
-      fillExtrusionHeight: _debugExtrusionHeightMeters,
-      fillExtrusionBase: 0,
-      fillExtrusionOpacity: 0.85,
-      fillExtrusionVerticalGradient: true,
+      color: _visitedExtrusionColor,
+      base: 0,
+      height: _debugExtrusionHeightMeters * 0.4,
+      opacity: 0.60,
+    );
+    await _upsertExtrusionLayer(
+      style: style,
+      layerId: visitedNearbyPubsMiddleLayerId,
+      sourceId: visitedNearbyPubsSourceId,
+      color: _visitedExtrusionColor,
+      base: _debugExtrusionHeightMeters * 0.4,
+      height: _debugExtrusionHeightMeters * 0.75,
+      opacity: 0.42,
+    );
+    await _upsertExtrusionLayer(
+      style: style,
+      layerId: visitedNearbyPubsTopLayerId,
+      sourceId: visitedNearbyPubsSourceId,
+      color: _visitedExtrusionColor,
+      base: _debugExtrusionHeightMeters * 0.75,
+      height: _debugExtrusionHeightMeters,
+      opacity: 0.16,
     );
 
-    final mbx.FillExtrusionLayer unvisitedLayer = mbx.FillExtrusionLayer(
-      id: unvisitedNearbyPubsLayerId,
+    await _upsertExtrusionLayer(
+      style: style,
+      layerId: unvisitedNearbyPubsBottomLayerId,
       sourceId: unvisitedNearbyPubsSourceId,
-      fillExtrusionColor: _unvisitedExtrusionColor,
-      fillExtrusionHeight: _debugExtrusionHeightMeters,
-      fillExtrusionBase: 0,
-      fillExtrusionOpacity: 0.85,
-      fillExtrusionVerticalGradient: true,
+      color: _unvisitedExtrusionColor,
+      base: 0,
+      height: _debugExtrusionHeightMeters * 0.4,
+      opacity: 0.60,
     );
-
-    final mbx.Layer? existingVisitedLayer = await _tryGetLayer(
+    await _upsertExtrusionLayer(
       style: style,
-      layerId: visitedNearbyPubsLayerId,
+      layerId: unvisitedNearbyPubsMiddleLayerId,
+      sourceId: unvisitedNearbyPubsSourceId,
+      color: _unvisitedExtrusionColor,
+      base: _debugExtrusionHeightMeters * 0.4,
+      height: _debugExtrusionHeightMeters * 0.75,
+      opacity: 0.42,
     );
-    if (existingVisitedLayer == null) {
-      await style.addLayer(visitedLayer);
-    } else {
-      await style.updateLayer(visitedLayer);
-    }
-
-    final mbx.Layer? existingUnvisitedLayer = await _tryGetLayer(
+    await _upsertExtrusionLayer(
       style: style,
-      layerId: unvisitedNearbyPubsLayerId,
+      layerId: unvisitedNearbyPubsTopLayerId,
+      sourceId: unvisitedNearbyPubsSourceId,
+      color: _unvisitedExtrusionColor,
+      base: _debugExtrusionHeightMeters * 0.75,
+      height: _debugExtrusionHeightMeters,
+      opacity: 0.16,
     );
-    if (existingUnvisitedLayer == null) {
-      await style.addLayer(unvisitedLayer);
-    } else {
-      await style.updateLayer(unvisitedLayer);
-    }
 
     return true;
   } catch (error, stackTrace) {
     debugPrint('Mapbox pubs debug error: $error');
     debugPrint('Mapbox pubs debug stackTrace: $stackTrace');
     return false;
+  }
+}
+
+Future<void> _upsertExtrusionLayer({
+  required mbx.StyleManager style,
+  required String layerId,
+  required String sourceId,
+  required int color,
+  required double base,
+  required double height,
+  required double opacity,
+}) async {
+  final mbx.FillExtrusionLayer layer = mbx.FillExtrusionLayer(
+    id: layerId,
+    sourceId: sourceId,
+    fillExtrusionColor: color,
+    fillExtrusionHeight: height,
+    fillExtrusionBase: base,
+    fillExtrusionOpacity: opacity,
+    fillExtrusionVerticalGradient: true,
+  );
+
+  final mbx.Layer? existingLayer = await _tryGetLayer(
+    style: style,
+    layerId: layerId,
+  );
+  if (existingLayer == null) {
+    await style.addLayer(layer);
+  } else {
+    await style.updateLayer(layer);
   }
 }
 
