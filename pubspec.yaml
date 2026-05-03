@@ -33,6 +33,7 @@ dependencies:
 
   # For Google Maps implementation.
   google_maps_flutter: 2.14.2
+  mapbox_maps_flutter: ^2.7.0
   geolocator: 14.0.2
 
   # The following adds the Cupertino Icons font to your application.
@@ -70,6 +71,7 @@ flutter:
     - assets/icons/app-icon.png
     - assets/models/casual_character.glb
     - assets/lottie/liquid-fill.json
+    - assets/geojson/london-pubs.geojson
 
   # To add assets to your application, add an assets section, like this:
   # assets:

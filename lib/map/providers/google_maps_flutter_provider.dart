@@ -14,13 +14,14 @@ class _GoogleMapsFlutterController implements MapProviderController {
     required double tilt,
     required double zoom,
     required double bearing,
-  }) {
+  }) async {
+    final double currentZoom = await _controller.getZoomLevel();
     return _controller.moveCamera(
       CameraUpdate.newCameraPosition(
         CameraPosition(
           target: LatLng(latitude, longitude),
           tilt: tilt,
-          zoom: zoom,
+          zoom: currentZoom,
           bearing: bearing,
         ),
       ),
@@ -31,6 +32,7 @@ class _GoogleMapsFlutterController implements MapProviderController {
 Widget buildGoogleMapsFlutterProvider({
   required ValueChanged<MapProviderController> onControllerCreated,
   required VoidCallback onMapReady,
+  required OnPubFeatureTapped onPubFeatureTapped,
   required double initialLatitude,
   required double initialLongitude,
   required double initialZoom,
@@ -46,7 +48,7 @@ Widget buildGoogleMapsFlutterProvider({
     myLocationButtonEnabled: false,
     compassEnabled: false,
     zoomControlsEnabled: false,
-    zoomGesturesEnabled: false,
+    zoomGesturesEnabled: true,
     scrollGesturesEnabled: false,
     rotateGesturesEnabled: false,
     tiltGesturesEnabled: false,
