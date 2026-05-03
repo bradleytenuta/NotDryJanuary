@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:geolocator/geolocator.dart' as geo;
 import 'package:flutter/services.dart';
 
 import '../domain/pub_feature.dart';
@@ -11,11 +12,41 @@ class PubsGeoJsonCache {
   static final PubsGeoJsonCache instance = PubsGeoJsonCache._();
 
   static const String _assetPath = 'assets/geojson/london-pubs.geojson';
+  static const double nearbyRenderRadiusMeters = 1000;
+  static const double nearbyRenderRefreshDistanceMeters = 500;
+  static const double visitedCheckRadiusMeters = 100;
+  static const double visitedCheckRefreshDistanceMeters = 5;
 
   List<PubFeature>? _cachedFeatures;
+  final Map<String, _NearbyFeaturesWindow> _cachedNearbyFeaturesByRadius =
+      <String, _NearbyFeaturesWindow>{};
 
   Future<void> warmUp() async {
+    // Rebuild caches from disk on each app start for deterministic startup state.
+    _cachedFeatures = null;
+    _cachedNearbyFeaturesByRadius.clear();
     await loadFeatures();
+  }
+
+  Future<void> buildStartupNearbyCaches({
+    required double userLatitude,
+    required double userLongitude,
+  }) async {
+    await loadNearbyFeatures(
+      userLatitude: userLatitude,
+      userLongitude: userLongitude,
+      radiusMeters: nearbyRenderRadiusMeters,
+      refreshDistanceMeters: nearbyRenderRefreshDistanceMeters,
+      forceRefresh: true,
+    );
+
+    await loadNearbyFeatures(
+      userLatitude: userLatitude,
+      userLongitude: userLongitude,
+      radiusMeters: visitedCheckRadiusMeters,
+      refreshDistanceMeters: visitedCheckRefreshDistanceMeters,
+      forceRefresh: true,
+    );
   }
 
   Future<List<PubFeature>> loadFeatures() async {
@@ -96,6 +127,55 @@ class PubsGeoJsonCache {
     return parsed;
   }
 
+  Future<List<PubFeature>> loadNearbyFeatures({
+    required double userLatitude,
+    required double userLongitude,
+    required double radiusMeters,
+    required double refreshDistanceMeters,
+    bool forceRefresh = false,
+  }) async {
+    final String radiusKey = _radiusToCacheKey(radiusMeters);
+    final _NearbyFeaturesWindow? existingWindow =
+        _cachedNearbyFeaturesByRadius[radiusKey];
+
+    if (!forceRefresh && existingWindow != null) {
+      final double distanceFromWindowOrigin = geo.Geolocator.distanceBetween(
+        existingWindow.originLatitude,
+        existingWindow.originLongitude,
+        userLatitude,
+        userLongitude,
+      );
+
+      if (distanceFromWindowOrigin < refreshDistanceMeters) {
+        return existingWindow.features;
+      }
+    }
+
+    final List<PubFeature> allFeatures = await loadFeatures();
+    final List<PubFeature> nearbyFeatures = allFeatures
+        .where(
+          (PubFeature feature) => FeatureService.hasPointWithin(
+            coordinates: feature.coordinates,
+            userLatitude: userLatitude,
+            userLongitude: userLongitude,
+            radiusMeters: radiusMeters,
+          ),
+        )
+        .toList(growable: false);
+
+    _cachedNearbyFeaturesByRadius[radiusKey] = _NearbyFeaturesWindow(
+      originLatitude: userLatitude,
+      originLongitude: userLongitude,
+      features: nearbyFeatures,
+    );
+
+    return nearbyFeatures;
+  }
+
+  String _radiusToCacheKey(double radiusMeters) {
+    return radiusMeters.toStringAsFixed(3);
+  }
+
   bool _skipFeature({
     required Map<String, dynamic>? feature,
     required Map<String, dynamic>? geometry,
@@ -120,4 +200,16 @@ class PubsGeoJsonCache {
 
     return false;
   }
+}
+
+class _NearbyFeaturesWindow {
+  _NearbyFeaturesWindow({
+    required this.originLatitude,
+    required this.originLongitude,
+    required this.features,
+  });
+
+  final double originLatitude;
+  final double originLongitude;
+  final List<PubFeature> features;
 }

@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'loading/loading_screen.dart';
 import 'features/pub_cache.dart';
+import 'user_session_store.dart';
 
 const String _mapboxAccessToken = String.fromEnvironment('MAPS_API_KEY');
 
@@ -16,6 +17,11 @@ Future<void> main() async {
   }
 
   MapboxOptions.setAccessToken(_mapboxAccessToken);
+  final UserSessionData userSession = await UserSessionStore.instance.loadOrCreate();
+  debugPrint(
+    'User session loaded: ${userSession.toJson()} '
+    '(visited_pubs_count=${userSession.visitedPubs.length})',
+  );
   await PubsGeoJsonCache.instance.warmUp();
 
   await SystemChrome.setPreferredOrientations([
