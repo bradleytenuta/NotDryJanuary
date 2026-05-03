@@ -68,6 +68,7 @@ flutter:
 
   assets:
     - assets/icons/app-icon.png
+    - assets/icons/branding/greene-king.png
     - assets/models/casual_character.glb
     - assets/lottie/liquid-fill.json
     - assets/geojson/london-pubs.geojson

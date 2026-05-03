@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart' as geo;
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart' as mbx;
 
@@ -22,6 +23,8 @@ const String unvisitedNearbyPubsMiddleLayerId =
   'nearby-pubs-unvisited-3d-middle-layer';
 const String unvisitedNearbyPubsTopLayerId =
   'nearby-pubs-unvisited-3d-top-layer';
+const String _greeneKingBrandValue = 'Greene King';
+const String _greeneKingBrandAssetPath = 'assets/icons/branding/greene-king.png';
 const List<String> nearbyPubsLayerIds = <String>[
   visitedNearbyPubsBottomLayerId,
   visitedNearbyPubsMiddleLayerId,
@@ -37,6 +40,12 @@ const String _debugTargetFeatureId = 'way/263674306';
 const double _debugExtrusionHeightMeters = 150;
 const int _visitedExtrusionColor = 0xFF2E7D32;
 const int _unvisitedExtrusionColor = 0xFFD32F2F;
+const double _greeneKingSymbolZOffsetMeters = 175;
+const double _greeneKingIconSize = 0.2;
+
+final Expando<mbx.PointAnnotationManager> _greeneKingAnnotationManagers =
+  Expando<mbx.PointAnnotationManager>('greeneKingAnnotationManagers');
+Uint8List? _cachedGreeneKingAnnotationImage;
 
 Future<bool> addNearbyPubFeatures(
   mbx.MapboxMap mapboxMap, {
@@ -80,11 +89,11 @@ Future<bool> addNearbyPubFeatures(
       nearbyFeatures: nearbyFeatures,
       visitedPubIds: userSession.visitedPubs,
     );
-
     debugPrint(
       'Mapbox pubs debug: nearbyCount=${nearbyMapData.nearbyFeatureIds.length}, '
       'nearbyVisitedCount=${nearbyMapData.visitedNearbyFeatureIds.length}, '
       'nearbyUnvisitedCount=${nearbyMapData.unvisitedNearbyFeatureIds.length}, '
+      'greeneKingCount=${nearbyFeatures.where((PubFeature feature) => _isGreeneKing(feature.brand)).length}, '
       'sessionVisitedCount=${userSession.visitedPubs.length}, '
       'target($_debugTargetFeatureId)Present=${nearbyMapData.nearbyFeatureIds.contains(_debugTargetFeatureId)}, '
       'origin=(${filterOrigin.latitude}, ${filterOrigin.longitude}), '
@@ -179,12 +188,107 @@ Future<bool> addNearbyPubFeatures(
       opacity: 0.16,
     );
 
+    await _upsertGreeneKingOverlay(
+      mapboxMap: mapboxMap,
+      features: nearbyFeatures,
+    );
+
     return true;
   } catch (error, stackTrace) {
     debugPrint('Mapbox pubs debug error: $error');
     debugPrint('Mapbox pubs debug stackTrace: $stackTrace');
     return false;
   }
+}
+
+Future<void> _upsertGreeneKingOverlay({
+  required mbx.MapboxMap mapboxMap,
+  required List<PubFeature> features,
+}) async {
+  try {
+    final mbx.PointAnnotationManager manager =
+        await _getGreeneKingAnnotationManager(mapboxMap);
+    await manager.deleteAll();
+
+    final Uint8List image = await _loadGreeneKingAnnotationImage();
+    final List<mbx.PointAnnotationOptions> annotations = features
+        .where((PubFeature feature) => _isGreeneKing(feature.brand))
+        .map(
+          (PubFeature feature) => mbx.PointAnnotationOptions(
+            geometry: mbx.Point(
+              coordinates: mbx.Position(
+                _featureCenter(feature.coordinates)[0],
+                _featureCenter(feature.coordinates)[1],
+              ),
+            ),
+            image: image,
+            iconAnchor: mbx.IconAnchor.BOTTOM,
+            iconSize: _greeneKingIconSize,
+            iconOpacity: 0.6,
+            iconEmissiveStrength: 1,
+            symbolZOffset: _greeneKingSymbolZOffsetMeters,
+          ),
+        )
+        .toList(growable: false);
+
+    if (annotations.isNotEmpty) {
+      await manager.createMulti(annotations);
+    }
+  } catch (error, stackTrace) {
+    debugPrint('Mapbox Greene King overlay debug error: $error');
+    debugPrint('Mapbox Greene King overlay debug stackTrace: $stackTrace');
+  }
+}
+
+Future<mbx.PointAnnotationManager> _getGreeneKingAnnotationManager(
+  mbx.MapboxMap mapboxMap,
+) async {
+  final mbx.PointAnnotationManager? existingManager =
+      _greeneKingAnnotationManagers[mapboxMap];
+  if (existingManager != null) {
+    return existingManager;
+  }
+
+  final mbx.PointAnnotationManager manager =
+      await mapboxMap.annotations.createPointAnnotationManager();
+  await manager.setIconAllowOverlap(true);
+  await manager.setIconIgnorePlacement(true);
+  _greeneKingAnnotationManagers[mapboxMap] = manager;
+  return manager;
+}
+
+Future<Uint8List> _loadGreeneKingAnnotationImage() async {
+  final Uint8List? cached = _cachedGreeneKingAnnotationImage;
+  if (cached != null) {
+    return cached;
+  }
+
+  final ByteData imageData = await rootBundle.load(_greeneKingBrandAssetPath);
+  final Uint8List output = imageData.buffer.asUint8List();
+  _cachedGreeneKingAnnotationImage = output;
+  return output;
+}
+
+bool _isGreeneKing(String? brand) {
+  return brand?.trim().toLowerCase() == _greeneKingBrandValue.toLowerCase();
+}
+
+List<double> _featureCenter(List<List<List<double>>> coordinates) {
+  if (coordinates.isEmpty || coordinates.first.isEmpty) {
+    return <double>[0, 0];
+  }
+
+  final List<List<double>> outerRing = coordinates.first;
+  double longitudeTotal = 0;
+  double latitudeTotal = 0;
+
+  for (final List<double> point in outerRing) {
+    longitudeTotal += point[0];
+    latitudeTotal += point[1];
+  }
+
+  final double pointsCount = outerRing.length.toDouble();
+  return <double>[longitudeTotal / pointsCount, latitudeTotal / pointsCount];
 }
 
 Future<void> _upsertExtrusionLayer({
