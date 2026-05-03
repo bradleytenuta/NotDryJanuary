@@ -4,25 +4,33 @@ class MapActionButton extends StatelessWidget {
   const MapActionButton({
     super.key,
     required this.onPressed,
+    required this.heroTag,
+    required this.icon,
+    required this.tooltip,
+    this.topOffset = 16,
   });
 
   final VoidCallback onPressed;
+  final String heroTag;
+  final IconData icon;
+  final String tooltip;
+  final double topOffset;
 
   @override
   Widget build(BuildContext context) {
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.only(top: 16, right: 16),
+        padding: EdgeInsets.only(top: topOffset, right: 16),
         child: Align(
           alignment: Alignment.topRight,
           child: FloatingActionButton.small(
-            heroTag: 'map-action-button',
+            heroTag: heroTag,
             backgroundColor: Colors.white,
             foregroundColor: Colors.black87,
             elevation: 6,
-            tooltip: 'Recenter map',
+            tooltip: tooltip,
             onPressed: onPressed,
-            child: const Icon(Icons.manage_accounts),
+            child: Icon(icon),
           ),
         ),
       ),
