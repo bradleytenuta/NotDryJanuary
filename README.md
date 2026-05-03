@@ -64,7 +64,11 @@ flutter devices
 Run on the connected Android device with ID 39201JEHN06666:
 
 ```bash
+<<<<<<< HEAD
 flutter run -d 39201JEHN06666 --dart-define=xxx
+=======
+flutter run -d 39201JEHN06666 --dart-define=MAPS_API_KEY=xxx
+>>>>>>> e95a5a6 (removed secret from README)
 ```
 
 ### Compile and Build
