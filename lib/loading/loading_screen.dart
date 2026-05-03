@@ -1,8 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
-import '../map/map_screen.dart';
-import '../map/providers/mapbox_maps_flutter_provider.dart';
+import '../map/map.dart';
+import '../ui/mapbox.dart';
 
 class AppStartupScreen extends StatefulWidget {
   const AppStartupScreen({super.key});

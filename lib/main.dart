@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mapbox_maps_flutter/mapbox_maps_flutter.dart';
 import 'loading/loading_screen.dart';
-import 'map/pubs_geojson_cache.dart';
+import 'features/pub_cache.dart';
 
 const String _mapboxAccessToken = String.fromEnvironment('MAPS_API_KEY');
 
