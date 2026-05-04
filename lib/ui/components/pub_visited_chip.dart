@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-import '../user_session_store.dart';
+import '../../user_session_store.dart';
 
-class VisitedPubsChip extends StatelessWidget {
-  const VisitedPubsChip({super.key});
+class PubVisitedChip extends StatelessWidget {
+  const PubVisitedChip({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -22,7 +22,7 @@ class VisitedPubsChip extends StatelessWidget {
                   Icons.sports_bar,
                   color: Colors.black87,
                 ),
-                label: Text('$visitedCount visited pubs'),
+                label: Text('$visitedCount pubs visited'),
               );
             },
           ),

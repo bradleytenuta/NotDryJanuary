@@ -9,7 +9,7 @@ import '../domain/pub_feature.dart';
 import '../features/feature_service.dart';
 import '../features/pub_cache.dart';
 import '../user_session_store.dart';
-import 'nearby_pubs.dart';
+import '../ui/components/pub_beam.dart';
 
 export '../domain/pub_feature.dart';
 
@@ -206,7 +206,6 @@ class MapboxMapController {
 
 typedef MapboxMapProviderBuilder = Widget Function({
   required ValueChanged<MapboxMapController> onControllerCreated,
-  required VoidCallback onMapReady,
   required OnPubFeatureTapped onPubFeatureTapped,
   required double initialLatitude,
   required double initialLongitude,
@@ -217,9 +216,8 @@ typedef MapboxMapProviderBuilder = Widget Function({
 const String _mapboxStandardBasemapImportId = 'basemap';
 const double _maxZoomOutLevel = 16;
 
-Widget buildMapboxMapsFlutterProvider({
+Widget mapboxMap({
   required ValueChanged<MapboxMapController> onControllerCreated,
-  required VoidCallback onMapReady,
   required OnPubFeatureTapped onPubFeatureTapped,
   required double initialLatitude,
   required double initialLongitude,
@@ -282,7 +280,6 @@ Widget buildMapboxMapsFlutterProvider({
       if (controller != null) {
         unawaited(controller.markMapLoaded());
       }
-      onMapReady();
     },
     onStyleLoadedListener: (_) {
       if (createdMap != null) {

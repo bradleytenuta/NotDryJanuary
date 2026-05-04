@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-class MapActionButton extends StatelessWidget {
-  const MapActionButton({
+class MapButton extends StatelessWidget {
+  const MapButton({
     super.key,
     required this.onPressed,
     required this.heroTag,

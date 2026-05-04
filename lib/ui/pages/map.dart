@@ -5,30 +5,26 @@ import 'package:flutter_compass/flutter_compass.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:model_viewer_plus/model_viewer_plus.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
-import '../character/animation.dart';
-import '../features/pub_cache.dart';
-import '../ui/map_action_button.dart';
-import '../ui/mapbox.dart';
-import '../ui/pub_details_modal.dart';
-import '../ui/credits_page.dart';
-import '../ui/visited_pubs_page.dart';
-import '../ui/visited_pubs_chip.dart';
-import '../user_session_store.dart';
-import 'camera_logic.dart';
-import '../debug/location_override.dart';
-import 'location_access.dart';
+import '../../character/animation.dart';
+import '../../features/pub_cache.dart';
+import '../components/map_button.dart';
+import '../../map/mapbox.dart';
+import '../components/pub_details_modal.dart';
+import 'credits.dart';
+import 'account.dart';
+import '../components/pub_visited_chip.dart';
+import '../../user_session_store.dart';
+import '../../map/camera_logic.dart';
+import '../../debug/location_override.dart';
+import '../../map/location_access.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({
     super.key,
     required this.mapProviderBuilder,
-    this.onMapReady,
-    this.onModelReady,
   });
 
   final MapboxMapProviderBuilder mapProviderBuilder;
-  final VoidCallback? onMapReady;
-  final VoidCallback? onModelReady;
 
   @override
   State<MapScreen> createState() => _MapScreenState();
@@ -42,8 +38,6 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   double? _playerLongitude;
   bool _isCameraUpdateInFlight = false;
   bool _hasPendingCameraUpdate = false;
-  bool _hasSentMapReady = false;
-  bool _hasSentModelReady = false;
   bool _isPubSheetOpen = false;
   final MapAnimationLogic _animationLogic = MapAnimationLogic();
   final MapCameraLogic _cameraLogic = MapCameraLogic();
@@ -245,14 +239,6 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     );
   }
 
-  void _onProviderMapReady() {
-    if (_hasSentMapReady) {
-      return;
-    }
-    _hasSentMapReady = true;
-    widget.onMapReady?.call();
-  }
-
   Future<void> _onPubFeatureTapped(PubFeature featureDetails) async {
     if (!mounted) {
       return;
@@ -281,7 +267,6 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
         children: [
           widget.mapProviderBuilder(
             onControllerCreated: _onProviderControllerCreated,
-            onMapReady: _onProviderMapReady,
             onPubFeatureTapped: (PubFeature details) {
               unawaited(_onPubFeatureTapped(details));
             },
@@ -319,11 +304,6 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                           cameraControls: false,
                           disableZoom: true,
                           backgroundColor: Colors.transparent,
-                          onWebViewCreated: (_) {
-                            if (_hasSentModelReady) return;
-                            _hasSentModelReady = true;
-                            widget.onModelReady?.call();
-                          },
                         ),
                       ),
                     ),
@@ -332,22 +312,22 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
               ),
             ),
           ),
-          const VisitedPubsChip(),
-          MapActionButton(
+          const PubVisitedChip(),
+          MapButton(
             heroTag: 'map-account-action-button',
             icon: Icons.manage_accounts,
             tooltip: 'Open account',
             onPressed: () {
               Navigator.of(context).push(
                 MaterialPageRoute<void>(
-                  builder: (_) => const VisitedPubsPage(),
+                  builder: (_) => const Account(),
                 ),
               ).then((_) {
                 _loadCharacterModelPathFromSession();
               });
             },
           ),
-          MapActionButton(
+          MapButton(
             heroTag: 'map-credits-action-button',
             icon: Icons.info_outline,
             tooltip: 'Open credits',
@@ -355,7 +335,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
             onPressed: () {
               Navigator.of(context).push(
                 MaterialPageRoute<void>(
-                  builder: (_) => const CreditsPage(),
+                  builder: (_) => const Credits(),
                 ),
               );
             },

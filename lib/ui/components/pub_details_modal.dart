@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../domain/pub_feature.dart';
+import '../../domain/pub_feature.dart';
 
 Future<void> showPubDetailsModal({
   required BuildContext context,
