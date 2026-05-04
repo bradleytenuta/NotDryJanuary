@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 
-import '../features/pub_cache.dart';
-import '../user_session_store.dart';
+import '../../features/pub_cache.dart';
+import '../../user_session_store.dart';
 
-class VisitedPubsPage extends StatefulWidget {
-  const VisitedPubsPage({super.key});
+class Account extends StatefulWidget {
+  const Account({super.key});
 
   @override
-  State<VisitedPubsPage> createState() => _VisitedPubsPageState();
+  State<Account> createState() => _AccountState();
 }
 
-class _VisitedPubsPageState extends State<VisitedPubsPage> {
+class _AccountState extends State<Account> {
   static const String _defaultCharacter = 'casual_character';
   static const List<String> _characterOptions = <String>[
     'adventurer',
