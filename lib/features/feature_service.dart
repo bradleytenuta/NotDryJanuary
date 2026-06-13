@@ -271,6 +271,14 @@ class FeatureService {
   }) {
     const double epsilon = 1e-10;
 
+    final double squaredLength =
+        ((x2 - x1) * (x2 - x1)) + ((y2 - y1) * (y2 - y1));
+    if (squaredLength < epsilon) {
+      return ((pointLongitude - x1) * (pointLongitude - x1) +
+              (pointLatitude - y1) * (pointLatitude - y1)) <
+          epsilon;
+    }
+
     final double cross =
         ((pointLatitude - y1) * (x2 - x1)) - ((pointLongitude - x1) * (y2 - y1));
     if (cross.abs() > epsilon) {
@@ -283,8 +291,6 @@ class FeatureService {
       return false;
     }
 
-    final double squaredLength =
-        ((x2 - x1) * (x2 - x1)) + ((y2 - y1) * (y2 - y1));
     if (dot - squaredLength > epsilon) {
       return false;
     }

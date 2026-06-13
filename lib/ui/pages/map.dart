@@ -22,9 +22,15 @@ class MapScreen extends StatefulWidget {
   const MapScreen({
     super.key,
     required this.mapProviderBuilder,
+    this.characterViewerBuilder,
   });
 
   final MapboxMapProviderBuilder mapProviderBuilder;
+  final Widget Function(
+    BuildContext context,
+    String modelPath,
+    String animationName,
+  )? characterViewerBuilder;
 
   @override
   State<MapScreen> createState() => _MapScreenState();
@@ -289,22 +295,28 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                       child: SizedBox(
                         width: _avatarWidth,
                         height: _avatarHeight + _modelTopCrop,
-                        child: ModelViewer(
-                          key: ValueKey<String>(
-                            '$_characterModelPath:${_animationLogic.currentAnimationName}',
-                          ),
-                          src: _characterModelPath,
-                          alt: 'Player character',
-                          ar: false,
-                          autoRotate: false,
-                          autoPlay: true,
-                          animationName: _animationLogic.currentAnimationName,
-                          animationCrossfadeDuration: 250,
-                          orientation: '180deg ${180 + 30}deg 0deg',
-                          cameraControls: false,
-                          disableZoom: true,
-                          backgroundColor: Colors.transparent,
-                        ),
+                        child: widget.characterViewerBuilder != null
+                            ? widget.characterViewerBuilder!(
+                                context,
+                                _characterModelPath,
+                                _animationLogic.currentAnimationName,
+                              )
+                            : ModelViewer(
+                                key: ValueKey<String>(
+                                  '$_characterModelPath:${_animationLogic.currentAnimationName}',
+                                ),
+                                src: _characterModelPath,
+                                alt: 'Player character',
+                                ar: false,
+                                autoRotate: false,
+                                autoPlay: true,
+                                animationName: _animationLogic.currentAnimationName,
+                                animationCrossfadeDuration: 250,
+                                orientation: '180deg ${180 + 30}deg 0deg',
+                                cameraControls: false,
+                                disableZoom: true,
+                                backgroundColor: Colors.transparent,
+                              ),
                       ),
                     ),
                   ),
