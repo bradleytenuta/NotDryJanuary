@@ -37,7 +37,8 @@ class _PubDetailsBottomSheet extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              if (featureDetails.brand != null && featureDetails.brand!.isNotEmpty)
+              if (featureDetails.brand != null &&
+                  featureDetails.brand!.isNotEmpty)
                 Text('Brand: ${featureDetails.brand}'),
               Text('Name: ${featureDetails.name}'),
               Text('Address: $address'),

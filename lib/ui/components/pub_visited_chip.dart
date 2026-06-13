@@ -13,15 +13,13 @@ class PubVisitedChip extends StatelessWidget {
         child: Align(
           alignment: Alignment.topCenter,
           child: ValueListenableBuilder<int>(
-            valueListenable: UserSessionStore.instance.visitedPubsCountListenable,
+            valueListenable:
+                UserSessionStore.instance.visitedPubsCountListenable,
             builder: (BuildContext context, int visitedCount, Widget? child) {
               return Chip(
                 backgroundColor: Colors.white,
                 side: BorderSide.none,
-                avatar: const Icon(
-                  Icons.sports_bar,
-                  color: Colors.black87,
-                ),
+                avatar: const Icon(Icons.sports_bar, color: Colors.black87),
                 label: Text('$visitedCount pubs visited'),
               );
             },

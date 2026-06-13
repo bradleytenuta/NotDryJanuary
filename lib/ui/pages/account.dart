@@ -26,8 +26,9 @@ class _AccountState extends State<Account> {
     'worker',
   ];
 
-  late final List<String> _deduplicatedCharacterOptions =
-      _characterOptions.toSet().toList(growable: false);
+  late final List<String> _deduplicatedCharacterOptions = _characterOptions
+      .toSet()
+      .toList(growable: false);
   late final Future<_VisitedPubsViewData> _visitedPubsViewDataFuture =
       _loadVisitedPubsViewData();
   String? _selectedCharacter;
@@ -56,113 +57,118 @@ class _AccountState extends State<Account> {
       body: FutureBuilder<_VisitedPubsViewData>(
         future: _visitedPubsViewDataFuture,
         builder:
-            (BuildContext context, AsyncSnapshot<_VisitedPubsViewData> snapshot) {
-          if (snapshot.connectionState != ConnectionState.done) {
-            return const Center(child: CircularProgressIndicator());
-          }
+            (
+              BuildContext context,
+              AsyncSnapshot<_VisitedPubsViewData> snapshot,
+            ) {
+              if (snapshot.connectionState != ConnectionState.done) {
+                return const Center(child: CircularProgressIndicator());
+              }
 
-          if (snapshot.hasError) {
-            return const Center(
-              child: Text('Could not load visited pubs.'),
-            );
-          }
+              if (snapshot.hasError) {
+                return const Center(
+                  child: Text('Could not load visited pubs.'),
+                );
+              }
 
-          final _VisitedPubsViewData viewData = snapshot.data ??
-              _VisitedPubsViewData(
-                visitedPubNames: <String>[],
-                character: _defaultCharacter,
-              );
-          final List<String> visitedPubNames = viewData.visitedPubNames;
-          final String selectedCharacter = _deduplicatedCharacterOptions.contains(
-                  _selectedCharacter ?? viewData.character)
-              ? (_selectedCharacter ?? viewData.character)
-              : _defaultCharacter;
+              final _VisitedPubsViewData viewData =
+                  snapshot.data ??
+                  _VisitedPubsViewData(
+                    visitedPubNames: <String>[],
+                    character: _defaultCharacter,
+                  );
+              final List<String> visitedPubNames = viewData.visitedPubNames;
+              final String selectedCharacter =
+                  _deduplicatedCharacterOptions.contains(
+                    _selectedCharacter ?? viewData.character,
+                  )
+                  ? (_selectedCharacter ?? viewData.character)
+                  : _defaultCharacter;
 
-          return Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  'Statistics',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 8),
-                Text('Number of pubs visited: ${visitedPubNames.length}'),
-                const SizedBox(height: 20),
-                Text(
-                  'My Character',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 8),
-                InputDecorator(
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
+              return Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: <Widget>[
+                    Text(
+                      'Statistics',
+                      style: Theme.of(context).textTheme.titleMedium,
                     ),
-                  ),
-                  child: DropdownButtonHideUnderline(
-                    child: DropdownButton<String>(
-                      value: selectedCharacter,
-                      isExpanded: true,
-                      items: _deduplicatedCharacterOptions
-                          .map(
-                            (String character) => DropdownMenuItem<String>(
-                              value: character,
-                              child: Text(character),
-                            ),
-                          )
-                          .toList(growable: false),
-                      onChanged: (String? value) {
-                        if (value == null) {
-                          return;
-                        }
-
-                        setState(() {
-                          _selectedCharacter = value;
-                        });
-                        _pendingCharacterSave =
-                            UserSessionStore.instance.updateCharacter(value);
-                      },
+                    const SizedBox(height: 8),
+                    Text('Number of pubs visited: ${visitedPubNames.length}'),
+                    const SizedBox(height: 20),
+                    Text(
+                      'My Character',
+                      style: Theme.of(context).textTheme.titleMedium,
                     ),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  'My visited pubs',
-                  style: Theme.of(context).textTheme.titleMedium,
-                ),
-                const SizedBox(height: 8),
-                Expanded(
-                  child: visitedPubNames.isEmpty
-                      ? const Center(
-                          child: Text('No pubs visited yet.'),
-                        )
-                      : ListView.separated(
-                          itemCount: visitedPubNames.length,
-                          separatorBuilder:
-                              (BuildContext context, int index) =>
-                                  const Divider(height: 1),
-                          itemBuilder: (BuildContext context, int index) {
-                            return ListTile(
-                              contentPadding: EdgeInsets.zero,
-                              title: Text(visitedPubNames[index]),
-                            );
+                    const SizedBox(height: 8),
+                    InputDecorator(
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: selectedCharacter,
+                          isExpanded: true,
+                          items: _deduplicatedCharacterOptions
+                              .map(
+                                (String character) => DropdownMenuItem<String>(
+                                  value: character,
+                                  child: Text(character),
+                                ),
+                              )
+                              .toList(growable: false),
+                          onChanged: (String? value) {
+                            if (value == null) {
+                              return;
+                            }
+
+                            setState(() {
+                              _selectedCharacter = value;
+                            });
+                            _pendingCharacterSave = UserSessionStore.instance
+                                .updateCharacter(value);
                           },
                         ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
+                      'My visited pubs',
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    const SizedBox(height: 8),
+                    Expanded(
+                      child: visitedPubNames.isEmpty
+                          ? const Center(child: Text('No pubs visited yet.'))
+                          : ListView.separated(
+                              itemCount: visitedPubNames.length,
+                              separatorBuilder:
+                                  (BuildContext context, int index) =>
+                                      const Divider(height: 1),
+                              itemBuilder: (BuildContext context, int index) {
+                                return ListTile(
+                                  contentPadding: EdgeInsets.zero,
+                                  title: Text(visitedPubNames[index]),
+                                );
+                              },
+                            ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          );
-        },
+              );
+            },
       ),
     );
   }
 
   Future<_VisitedPubsViewData> _loadVisitedPubsViewData() async {
-    final UserSessionData session = await UserSessionStore.instance.loadOrCreate();
+    final UserSessionData session = await UserSessionStore.instance
+        .loadOrCreate();
     if (session.visitedPubs.isEmpty) {
       return _VisitedPubsViewData(
         visitedPubNames: const <String>[],

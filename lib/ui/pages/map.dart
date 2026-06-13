@@ -30,7 +30,8 @@ class MapScreen extends StatefulWidget {
     BuildContext context,
     String modelPath,
     String animationName,
-  )? characterViewerBuilder;
+  )?
+  characterViewerBuilder;
 
   @override
   State<MapScreen> createState() => _MapScreenState();
@@ -67,7 +68,8 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
   }
 
   Future<void> _loadCharacterModelPathFromSession() async {
-    final UserSessionData session = await UserSessionStore.instance.loadOrCreate();
+    final UserSessionData session = await UserSessionStore.instance
+        .loadOrCreate();
     final String modelPath = 'assets/models/${session.character}.glb';
 
     if (!mounted || _characterModelPath == modelPath) {
@@ -103,9 +105,9 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
       );
       final ({double latitude, double longitude}) trackingLocation =
           resolveTrackingLocation(
-        latitude: initialPosition.latitude,
-        longitude: initialPosition.longitude,
-      );
+            latitude: initialPosition.latitude,
+            longitude: initialPosition.longitude,
+          );
       _playerLatitude = trackingLocation.latitude;
       _playerLongitude = trackingLocation.longitude;
       await PubsGeoJsonCache.instance.buildStartupNearbyCaches(
@@ -125,29 +127,30 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
 
     _startCompassTracking();
 
-    _positionStream = Geolocator.getPositionStream(
-      locationSettings: _buildLocationSettings(),
-    ).listen((Position position) async {
-      _cameraLogic.setInitialBearingIfUnset(
-        _cameraLogic.sanitizeHeading(position.heading),
-      );
+    _positionStream =
+        Geolocator.getPositionStream(
+          locationSettings: _buildLocationSettings(),
+        ).listen((Position position) async {
+          _cameraLogic.setInitialBearingIfUnset(
+            _cameraLogic.sanitizeHeading(position.heading),
+          );
 
-      final String previousAnimation = _animationLogic.currentAnimationName;
-      _animationLogic.updateAnimation(position, DateTime.now());
-      if (previousAnimation != _animationLogic.currentAnimationName) {
-        setState(() {});
-      }
-      final ({double latitude, double longitude}) trackingLocation =
-          resolveTrackingLocation(
-        latitude: position.latitude,
-        longitude: position.longitude,
-      );
-      _playerLatitude = trackingLocation.latitude;
-      _playerLongitude = trackingLocation.longitude;
+          final String previousAnimation = _animationLogic.currentAnimationName;
+          _animationLogic.updateAnimation(position, DateTime.now());
+          if (previousAnimation != _animationLogic.currentAnimationName) {
+            setState(() {});
+          }
+          final ({double latitude, double longitude}) trackingLocation =
+              resolveTrackingLocation(
+                latitude: position.latitude,
+                longitude: position.longitude,
+              );
+          _playerLatitude = trackingLocation.latitude;
+          _playerLongitude = trackingLocation.longitude;
 
-      unawaited(_refreshNearbyPubsForPlayerLocation());
-      await _updateCameraToPlayer();
-    });
+          unawaited(_refreshNearbyPubsForPlayerLocation());
+          await _updateCameraToPlayer();
+        });
   }
 
   LocationSettings _buildLocationSettings() {
@@ -258,10 +261,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
     }
 
     _isPubSheetOpen = true;
-    await showPubDetailsModal(
-      context: context,
-      featureDetails: featureDetails,
-    );
+    await showPubDetailsModal(context: context, featureDetails: featureDetails);
 
     _isPubSheetOpen = false;
   }
@@ -310,7 +310,8 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
                                 ar: false,
                                 autoRotate: false,
                                 autoPlay: true,
-                                animationName: _animationLogic.currentAnimationName,
+                                animationName:
+                                    _animationLogic.currentAnimationName,
                                 animationCrossfadeDuration: 250,
                                 orientation: '180deg ${180 + 30}deg 0deg',
                                 cameraControls: false,
@@ -330,13 +331,13 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
             icon: Icons.manage_accounts,
             tooltip: 'Open account',
             onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const Account(),
-                ),
-              ).then((_) {
-                _loadCharacterModelPathFromSession();
-              });
+              Navigator.of(context)
+                  .push(
+                    MaterialPageRoute<void>(builder: (_) => const Account()),
+                  )
+                  .then((_) {
+                    _loadCharacterModelPathFromSession();
+                  });
             },
           ),
           MapButton(
@@ -345,11 +346,9 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
             tooltip: 'Open credits',
             topOffset: 84,
             onPressed: () {
-              Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const Credits(),
-                ),
-              );
+              Navigator.of(
+                context,
+              ).push(MaterialPageRoute<void>(builder: (_) => const Credits()));
             },
           ),
         ],

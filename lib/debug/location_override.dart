@@ -9,14 +9,8 @@ const double debugOverrideLongitude = -0.142396;
   required double longitude,
 }) {
   if (useDebugLocationOverride) {
-    return (
-      latitude: debugOverrideLatitude,
-      longitude: debugOverrideLongitude,
-    );
+    return (latitude: debugOverrideLatitude, longitude: debugOverrideLongitude);
   }
 
-  return (
-    latitude: latitude,
-    longitude: longitude,
-  );
+  return (latitude: latitude, longitude: longitude);
 }

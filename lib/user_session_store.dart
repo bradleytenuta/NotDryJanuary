@@ -5,10 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 
 class UserSessionData {
-  const UserSessionData({
-    required this.character,
-    required this.visitedPubs,
-  });
+  const UserSessionData({required this.character, required this.visitedPubs});
 
   final String character;
   final List<String> visitedPubs;
@@ -22,12 +19,12 @@ class UserSessionData {
 
   factory UserSessionData.fromJson(Map<String, dynamic> json) {
     final String character = (json['character'] as String?)?.trim() ?? '';
-    final List<String> visitedPubs = ((json['visited_pubs'] as List<dynamic>?) ??
-            const <dynamic>[])
-        .whereType<String>()
-        .map((String value) => value.trim())
-        .where((String value) => value.isNotEmpty)
-        .toList(growable: false);
+    final List<String> visitedPubs =
+        ((json['visited_pubs'] as List<dynamic>?) ?? const <dynamic>[])
+            .whereType<String>()
+            .map((String value) => value.trim())
+            .where((String value) => value.isNotEmpty)
+            .toList(growable: false);
 
     if (character.isEmpty) {
       return UserSessionData(
@@ -36,10 +33,7 @@ class UserSessionData {
       );
     }
 
-    return UserSessionData(
-      character: character,
-      visitedPubs: visitedPubs,
-    );
+    return UserSessionData(character: character, visitedPubs: visitedPubs);
   }
 }
 

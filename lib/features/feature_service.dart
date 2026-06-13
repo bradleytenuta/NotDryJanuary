@@ -91,20 +91,23 @@ class FeatureService {
         .toList(growable: false);
 
     return NearbyPubMapData(
-      visitedAreaFeatureCollection:
-          _toFeatureCollectionJson(visitedAreaFeatures),
-      unvisitedAreaFeatureCollection:
-          _toFeatureCollectionJson(unvisitedAreaFeatures),
-      nearbyFeatureIds:
-          nearbyFeatures.map((PubFeature feature) => feature.id).toList(growable: false),
+      visitedAreaFeatureCollection: _toFeatureCollectionJson(
+        visitedAreaFeatures,
+      ),
+      unvisitedAreaFeatureCollection: _toFeatureCollectionJson(
+        unvisitedAreaFeatures,
+      ),
+      nearbyFeatureIds: nearbyFeatures
+          .map((PubFeature feature) => feature.id)
+          .toList(growable: false),
       visitedNearbyFeatureIds: nearbyFeatures
-        .where((PubFeature feature) => visitedIds.contains(feature.id))
-        .map((PubFeature feature) => feature.id)
-        .toList(growable: false),
+          .where((PubFeature feature) => visitedIds.contains(feature.id))
+          .map((PubFeature feature) => feature.id)
+          .toList(growable: false),
       unvisitedNearbyFeatureIds: nearbyFeatures
-        .where((PubFeature feature) => !visitedIds.contains(feature.id))
-        .map((PubFeature feature) => feature.id)
-        .toList(growable: false),
+          .where((PubFeature feature) => !visitedIds.contains(feature.id))
+          .map((PubFeature feature) => feature.id)
+          .toList(growable: false),
     );
   }
 
@@ -280,13 +283,15 @@ class FeatureService {
     }
 
     final double cross =
-        ((pointLatitude - y1) * (x2 - x1)) - ((pointLongitude - x1) * (y2 - y1));
+        ((pointLatitude - y1) * (x2 - x1)) -
+        ((pointLongitude - x1) * (y2 - y1));
     if (cross.abs() > epsilon) {
       return false;
     }
 
     final double dot =
-        ((pointLongitude - x1) * (x2 - x1)) + ((pointLatitude - y1) * (y2 - y1));
+        ((pointLongitude - x1) * (x2 - x1)) +
+        ((pointLatitude - y1) * (y2 - y1));
     if (dot < -epsilon) {
       return false;
     }

@@ -13,18 +13,19 @@ import '../../user_session_store.dart';
 const String visitedNearbyPubsSourceId = 'nearby-pubs-visited-source';
 const String unvisitedNearbyPubsSourceId = 'nearby-pubs-unvisited-source';
 const String visitedNearbyPubsBottomLayerId =
-  'nearby-pubs-visited-3d-bottom-layer';
+    'nearby-pubs-visited-3d-bottom-layer';
 const String visitedNearbyPubsMiddleLayerId =
-  'nearby-pubs-visited-3d-middle-layer';
+    'nearby-pubs-visited-3d-middle-layer';
 const String visitedNearbyPubsTopLayerId = 'nearby-pubs-visited-3d-top-layer';
 const String unvisitedNearbyPubsBottomLayerId =
-  'nearby-pubs-unvisited-3d-bottom-layer';
+    'nearby-pubs-unvisited-3d-bottom-layer';
 const String unvisitedNearbyPubsMiddleLayerId =
-  'nearby-pubs-unvisited-3d-middle-layer';
+    'nearby-pubs-unvisited-3d-middle-layer';
 const String unvisitedNearbyPubsTopLayerId =
-  'nearby-pubs-unvisited-3d-top-layer';
+    'nearby-pubs-unvisited-3d-top-layer';
 const String _greeneKingBrandValue = 'Greene King';
-const String _greeneKingBrandAssetPath = 'assets/icons/branding/greene-king.png';
+const String _greeneKingBrandAssetPath =
+    'assets/icons/branding/greene-king.png';
 const List<String> nearbyPubsLayerIds = <String>[
   visitedNearbyPubsBottomLayerId,
   visitedNearbyPubsMiddleLayerId,
@@ -44,7 +45,7 @@ const double _greeneKingSymbolZOffsetMeters = 175;
 const double _greeneKingIconSize = 0.2;
 
 final Expando<mbx.PointAnnotationManager> _greeneKingAnnotationManagers =
-  Expando<mbx.PointAnnotationManager>('greeneKingAnnotationManagers');
+    Expando<mbx.PointAnnotationManager>('greeneKingAnnotationManagers');
 Uint8List? _cachedGreeneKingAnnotationImage;
 
 Future<bool> addNearbyPubFeatures(
@@ -73,22 +74,22 @@ Future<bool> addNearbyPubFeatures(
       );
     }
 
-    final List<PubFeature> nearbyFeatures =
-        await PubsGeoJsonCache.instance.loadNearbyFeatures(
-      userLatitude: filterOrigin.latitude,
-      userLongitude: filterOrigin.longitude,
-      radiusMeters: _nearbyPubsRadiusMeters,
-      refreshDistanceMeters: nearbyPubsRefreshDistanceMeters,
-      forceRefresh: forceRefresh,
-    );
-    final UserSessionData userSession =
-        await UserSessionStore.instance.loadOrCreate();
+    final List<PubFeature> nearbyFeatures = await PubsGeoJsonCache.instance
+        .loadNearbyFeatures(
+          userLatitude: filterOrigin.latitude,
+          userLongitude: filterOrigin.longitude,
+          radiusMeters: _nearbyPubsRadiusMeters,
+          refreshDistanceMeters: nearbyPubsRefreshDistanceMeters,
+          forceRefresh: forceRefresh,
+        );
+    final UserSessionData userSession = await UserSessionStore.instance
+        .loadOrCreate();
 
     final NearbyPubMapData nearbyMapData =
         FeatureService.buildNearbyMapDataFromNearbyFeatures(
-      nearbyFeatures: nearbyFeatures,
-      visitedPubIds: userSession.visitedPubs,
-    );
+          nearbyFeatures: nearbyFeatures,
+          visitedPubIds: userSession.visitedPubs,
+        );
     debugPrint(
       'Mapbox pubs debug: nearbyCount=${nearbyMapData.nearbyFeatureIds.length}, '
       'nearbyVisitedCount=${nearbyMapData.visitedNearbyFeatureIds.length}, '
@@ -249,8 +250,8 @@ Future<mbx.PointAnnotationManager> _getGreeneKingAnnotationManager(
     return existingManager;
   }
 
-  final mbx.PointAnnotationManager manager =
-      await mapboxMap.annotations.createPointAnnotationManager();
+  final mbx.PointAnnotationManager manager = await mapboxMap.annotations
+      .createPointAnnotationManager();
   await manager.setIconAllowOverlap(true);
   await manager.setIconIgnorePlacement(true);
   _greeneKingAnnotationManagers[mapboxMap] = manager;

@@ -32,5 +32,18 @@ jobs:
       - name: Static Analysis
         run: flutter analyze
 
-      - name: Run Tests
-        run: flutter test
+      - name: Run Tests with Coverage
+        run: flutter test --coverage
+
+      - name: Check Test Coverage
+        run: dart scripts/check_coverage.dart
+
+      - name: Scan for Vulnerabilities
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'table'
+          exit-code: '1'
+          ignore-unfixed: true
+          severity: 'HIGH,CRITICAL'
