@@ -64,12 +64,33 @@ flutter devices
 Run on the connected Android device with ID 39201JEHN06666:
 
 ```bash
-<<<<<<< HEAD
-flutter run -d 39201JEHN06666 --dart-define=xxx
-=======
-flutter run -d 39201JEHN06666 --dart-define=MAPS_API_KEY=xxx
->>>>>>> e95a5a6 (removed secret from README)
+flutter run -d 39201JEHN06666 --dart-define=MAPS_API_KEY={maps_api_key} --dart-define=DEBUG=TRUE
 ```
+
+### Run wirelessly on a phone
+
+To connect and run the app wirelessly on an Android phone over the same Wi-Fi network using ADB:
+
+1. **Pair your device** (only needed once, using the pairing port and code from Android's Wireless Debugging settings):
+   ```bash
+   E:\Android\Sdk\platform-tools\adb.exe pair [IP_ADDRESS]:44595
+   ```
+
+2. **Connect to the device** (using the connection port shown in Wireless Debugging settings):
+   ```bash
+   E:\Android\Sdk\platform-tools\adb.exe connect [IP_ADDRESS]
+   ```
+
+3. **Verify the connection**:
+   ```bash
+   E:\Android\Sdk\platform-tools\adb.exe devices
+   ```
+
+4. **Run the app**:
+   ```bash
+   flutter run -d 192.168.86.25:44707 --dart-define=MAPS_API_KEY={maps_api_key} --dart-define=DEBUG=TRUE
+   ```
+
 
 ### Compile and Build
 
@@ -154,3 +175,8 @@ Assets from:
 
 - https://poly.pizza/bundle/Ultimate-Modular-Men-Pack-ZiH8muWqwQ
 - https://lottiefiles.com/free-animation/hop-beer-pyQd25r5hW
+
+
+
+
+
