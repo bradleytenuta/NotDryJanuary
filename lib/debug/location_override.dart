@@ -1,6 +1,7 @@
 // Sets the default location to the PA Office in London.
 // Set to false to use true location.
-const bool useDebugLocationOverride = false;
+const bool useDebugLocationOverride = String.fromEnvironment('DEBUG') == 'true' ||
+    String.fromEnvironment('DEBUG') == 'TRUE';
 const double debugOverrideLatitude = 51.497819;
 const double debugOverrideLongitude = -0.142396;
 
@@ -9,14 +10,8 @@ const double debugOverrideLongitude = -0.142396;
   required double longitude,
 }) {
   if (useDebugLocationOverride) {
-    return (
-      latitude: debugOverrideLatitude,
-      longitude: debugOverrideLongitude,
-    );
+    return (latitude: debugOverrideLatitude, longitude: debugOverrideLongitude);
   }
 
-  return (
-    latitude: latitude,
-    longitude: longitude,
-  );
+  return (latitude: latitude, longitude: longitude);
 }

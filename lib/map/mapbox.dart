@@ -38,9 +38,7 @@ class MapboxMapController {
     final mbx.CameraState cameraState = await _mapboxMap.getCameraState();
     return _mapboxMap.setCamera(
       mbx.CameraOptions(
-        center: mbx.Point(
-          coordinates: mbx.Position(longitude, latitude),
-        ),
+        center: mbx.Point(coordinates: mbx.Position(longitude, latitude)),
         pitch: tilt,
         zoom: cameraState.zoom,
         bearing: bearing,
@@ -82,14 +80,14 @@ class MapboxMapController {
 
     _isNearbyPubsRefreshInFlight = true;
     try {
-      await _recordVisitedPubsAtLocation(
+      final bool newPubVisited = await _recordVisitedPubsAtLocation(
         latitude: latitude,
         longitude: longitude,
       );
 
       final ({double latitude, double longitude})? origin = _nearbyPubsOrigin;
 
-      if (origin == null) {
+      if (origin == null || newPubVisited) {
         final bool didUpdateNearbyFeatures = await addNearbyPubFeatures(
           _mapboxMap,
           latitude: latitude,
@@ -136,7 +134,7 @@ class MapboxMapController {
     );
   }
 
-  Future<void> _recordVisitedPubsAtLocation({
+  Future<bool> _recordVisitedPubsAtLocation({
     required double latitude,
     required double longitude,
   }) async {
@@ -151,19 +149,19 @@ class MapboxMapController {
       );
 
       if (distanceSinceLastCheck < _visitedPubsCheckDistanceMeters) {
-        return;
+        return false;
       }
     }
 
     _lastVisitedPubsCheckLocation = (latitude: latitude, longitude: longitude);
 
-    final List<PubFeature> candidateFeatures =
-        await PubsGeoJsonCache.instance.loadNearbyFeatures(
-      userLatitude: latitude,
-      userLongitude: longitude,
-      radiusMeters: PubsGeoJsonCache.visitedCheckRadiusMeters,
-      refreshDistanceMeters: _visitedPubsCheckDistanceMeters,
-    );
+    final List<PubFeature> candidateFeatures = await PubsGeoJsonCache.instance
+        .loadNearbyFeatures(
+          userLatitude: latitude,
+          userLongitude: longitude,
+          radiusMeters: PubsGeoJsonCache.visitedCheckRadiusMeters,
+          refreshDistanceMeters: _visitedPubsCheckDistanceMeters,
+        );
 
     final List<String> visitedPubIds = FeatureService.findContainingFeatureIds(
       features: candidateFeatures,
@@ -172,7 +170,7 @@ class MapboxMapController {
     );
 
     if (visitedPubIds.isEmpty) {
-      return;
+      return false;
     }
 
     if (visitedPubIds.length > _maxVisitedPubsToAddPerCheck) {
@@ -180,13 +178,25 @@ class MapboxMapController {
         'Mapbox visited pubs guard: refusing to add ${visitedPubIds.length} IDs in one check at '
         '($latitude, $longitude).',
       );
-      return;
+      return false;
     }
 
-    await UserSessionStore.instance.addVisitedPubs(visitedPubIds);
+    final UserSessionData session = await UserSessionStore.instance
+        .loadOrCreate();
+    final bool hasNewVisited = visitedPubIds.any(
+      (String id) => !session.visitedPubs.contains(id),
+    );
+
+    if (hasNewVisited) {
+      await UserSessionStore.instance.addVisitedPubs(visitedPubIds);
+      return true;
+    }
+
+    return false;
   }
 
-  Future<({double latitude, double longitude})?> _resolveCurrentTrackingLocation() async {
+  Future<({double latitude, double longitude})?>
+  _resolveCurrentTrackingLocation() async {
     try {
       final geo.Position position = await geo.Geolocator.getCurrentPosition(
         locationSettings: const geo.LocationSettings(
@@ -204,17 +214,18 @@ class MapboxMapController {
   }
 }
 
-typedef MapboxMapProviderBuilder = Widget Function({
-  required ValueChanged<MapboxMapController> onControllerCreated,
-  required OnPubFeatureTapped onPubFeatureTapped,
-  required double initialLatitude,
-  required double initialLongitude,
-  required double initialZoom,
-  required double initialTilt,
-});
+typedef MapboxMapProviderBuilder =
+    Widget Function({
+      required ValueChanged<MapboxMapController> onControllerCreated,
+      required OnPubFeatureTapped onPubFeatureTapped,
+      required double initialLatitude,
+      required double initialLongitude,
+      required double initialZoom,
+      required double initialTilt,
+    });
 
 const String _mapboxStandardBasemapImportId = 'basemap';
-const double _maxZoomOutLevel = 16;
+const double _maxZoomOutLevel = 14;
 
 Widget mapboxMap({
   required ValueChanged<MapboxMapController> onControllerCreated,
@@ -229,6 +240,7 @@ Widget mapboxMap({
   bool isMapLoaded = false;
 
   return mbx.MapWidget(
+    styleUri: 'mapbox://styles/mapbox/standard',
     // ignore: deprecated_member_use
     cameraOptions: mbx.CameraOptions(
       center: mbx.Point(
@@ -249,9 +261,7 @@ Widget mapboxMap({
       }
 
       await mapboxMap.setBounds(
-        mbx.CameraBoundsOptions(
-          minZoom: _maxZoomOutLevel,
-        ),
+        mbx.CameraBoundsOptions(minZoom: _maxZoomOutLevel),
       );
 
       await mapboxMap.gestures.updateSettings(
@@ -288,7 +298,6 @@ Widget mapboxMap({
         }());
       }
     },
-    // ignore: deprecated_member_use
     onTapListener: (mbx.MapContentGestureContext context) {
       final mbx.MapboxMap? mapboxMap = createdMap;
       if (mapboxMap == null) {
@@ -312,17 +321,17 @@ Future<PubFeature?> _getTappedPubFeatureDetails({
   required mbx.MapContentGestureContext gestureContext,
 }) async {
   try {
-    final List<mbx.QueriedRenderedFeature?> queriedFeatures =
-        await mapboxMap.queryRenderedFeatures(
-      mbx.RenderedQueryGeometry.fromScreenCoordinate(
-        gestureContext.touchPosition,
-      ),
-      mbx.RenderedQueryOptions(
-        layerIds: nearbyPubsLayerIds.map<String?>((String id) => id).toList(
-              growable: false,
-            ),
-      ),
-    );
+    final List<mbx.QueriedRenderedFeature?> queriedFeatures = await mapboxMap
+        .queryRenderedFeatures(
+          mbx.RenderedQueryGeometry.fromScreenCoordinate(
+            gestureContext.touchPosition,
+          ),
+          mbx.RenderedQueryOptions(
+            layerIds: nearbyPubsLayerIds
+                .map<String?>((String id) => id)
+                .toList(growable: false),
+          ),
+        );
 
     final mbx.QueriedRenderedFeature? firstFeature = queriedFeatures
         .whereType<mbx.QueriedRenderedFeature>()
@@ -382,11 +391,15 @@ String? _stringFrom(Object? value) {
 
 Future<void> _hideDefaultPlaceIcons(mbx.MapboxMap mapboxMap) async {
   try {
+    final int hour = DateTime.now().hour;
+    final String themePreset = (hour >= 6 && hour < 18) ? 'day' : 'night';
+
     await mapboxMap.style.setStyleImportConfigProperties(
       _mapboxStandardBasemapImportId,
       <String, Object>{
         'showPointOfInterestLabels': false,
         'showTransitLabels': false,
+        'lightPreset': themePreset,
       },
     );
   } catch (error, stackTrace) {

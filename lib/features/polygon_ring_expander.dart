@@ -11,10 +11,8 @@ class PolygonRingExpander {
   }) {
     return coordinates
         .map(
-          (List<List<double>> ring) => _expandRing(
-            ring: ring,
-            expansionMeters: expansionMeters,
-          ),
+          (List<List<double>> ring) =>
+              _expandRing(ring: ring, expansionMeters: expansionMeters),
         )
         .toList(growable: false);
   }
@@ -27,40 +25,46 @@ class PolygonRingExpander {
       return ring;
     }
 
-    final ({double latitude, double longitude}) centroid = _centroidOfRing(ring);
+    final ({double latitude, double longitude}) centroid = _centroidOfRing(
+      ring,
+    );
     final double metersPerDegreeLongitude =
-        _metersPerDegreeLatitude * math.cos(centroid.latitude * math.pi / 180.0);
+        _metersPerDegreeLatitude *
+        math.cos(centroid.latitude * math.pi / 180.0);
 
     if (metersPerDegreeLongitude.abs() < 0.000001) {
       return ring;
     }
 
-    return ring.map((List<double> point) {
-      final double longitude = point[0];
-      final double latitude = point[1];
+    return ring
+        .map((List<double> point) {
+          final double longitude = point[0];
+          final double latitude = point[1];
 
-      final double dxMeters =
-          (longitude - centroid.longitude) * metersPerDegreeLongitude;
-      final double dyMeters =
-          (latitude - centroid.latitude) * _metersPerDegreeLatitude;
+          final double dxMeters =
+              (longitude - centroid.longitude) * metersPerDegreeLongitude;
+          final double dyMeters =
+              (latitude - centroid.latitude) * _metersPerDegreeLatitude;
 
-      final double distanceMeters = math.sqrt(
-        (dxMeters * dxMeters) + (dyMeters * dyMeters),
-      );
+          final double distanceMeters = math.sqrt(
+            (dxMeters * dxMeters) + (dyMeters * dyMeters),
+          );
 
-      if (distanceMeters == 0) {
-        return point;
-      }
+          if (distanceMeters == 0) {
+            return point;
+          }
 
-      final double scale = (distanceMeters + expansionMeters) / distanceMeters;
-      final double expandedDxMeters = dxMeters * scale;
-      final double expandedDyMeters = dyMeters * scale;
+          final double scale =
+              (distanceMeters + expansionMeters) / distanceMeters;
+          final double expandedDxMeters = dxMeters * scale;
+          final double expandedDyMeters = dyMeters * scale;
 
-      return <double>[
-        centroid.longitude + (expandedDxMeters / metersPerDegreeLongitude),
-        centroid.latitude + (expandedDyMeters / _metersPerDegreeLatitude),
-      ];
-    }).toList(growable: false);
+          return <double>[
+            centroid.longitude + (expandedDxMeters / metersPerDegreeLongitude),
+            centroid.latitude + (expandedDyMeters / _metersPerDegreeLatitude),
+          ];
+        })
+        .toList(growable: false);
   }
 
   static ({double latitude, double longitude}) _centroidOfRing(
@@ -75,9 +79,6 @@ class PolygonRingExpander {
     }
 
     final double count = ring.length.toDouble();
-    return (
-      latitude: latitudeSum / count,
-      longitude: longitudeSum / count,
-    );
+    return (latitude: latitudeSum / count, longitude: longitudeSum / count);
   }
 }

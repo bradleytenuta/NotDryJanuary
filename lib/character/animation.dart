@@ -1,10 +1,6 @@
 import 'package:geolocator/geolocator.dart';
 
-enum SpeedToTrigger {
-  none,
-  gpsSpeed,
-  derivedSpeed,
-}
+enum SpeedToTrigger { none, gpsSpeed, derivedSpeed }
 
 enum AnimationRule {
   idle(
@@ -136,7 +132,8 @@ class MapAnimationLogic {
   }
 
   /// Computes movement from distance traveled between consecutive samples.
-  ({bool movingByDistance, bool runningByDistance}) _computeDerivedMovementState({
+  ({bool movingByDistance, bool runningByDistance})
+  _computeDerivedMovementState({
     required Position position,
     required DateTime now,
   }) {
@@ -158,9 +155,11 @@ class MapAnimationLogic {
     );
     final double derivedSpeed = movedMeters / elapsedSeconds;
 
-    final bool movingByDistance = movedMeters >= movementDistanceThresholdMeters &&
+    final bool movingByDistance =
+        movedMeters >= movementDistanceThresholdMeters &&
         derivedSpeed >= AnimationRule.walkDerived.speedThresholdMps;
-    final bool runningByDistance = movedMeters >= movementDistanceThresholdMeters &&
+    final bool runningByDistance =
+        movedMeters >= movementDistanceThresholdMeters &&
         derivedSpeed >= AnimationRule.runDerived.speedThresholdMps;
 
     return (

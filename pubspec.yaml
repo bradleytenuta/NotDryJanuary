@@ -68,7 +68,19 @@ flutter:
 
   assets:
     - assets/icons/app-icon.png
+    - assets/icons/lager-pint.png
+    - assets/icons/account-settings.png
+    - assets/icons/credits.png
     - assets/icons/branding/greene-king.png
+    - assets/icons/branding/wetherspoon.png
+    - assets/icons/branding/fullers.png
+    - assets/icons/branding/marstons.png
+    - assets/icons/branding/hungry-horse.png
+    - assets/icons/branding/vintage-inns.png
+    - assets/icons/branding/hall-woodhouse.png
+    - assets/icons/branding/ember-inns.png
+    - assets/icons/branding/chef-brewer.png
+    - assets/icons/branding/brewers-fayre.png
     - assets/models/adventurer.glb
     - assets/models/astronaut.glb
     - assets/models/beach_character.glb

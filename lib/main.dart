@@ -5,6 +5,8 @@ import 'ui/pages/loading.dart';
 import 'features/pub_cache.dart';
 import 'user_session_store.dart';
 
+import 'ui/theme.dart';
+
 const String _mapboxAccessToken = String.fromEnvironment('MAPS_API_KEY');
 
 Future<void> main() async {
@@ -34,6 +36,7 @@ class NotDryJanuaryApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      theme: AppTheme.darkTheme,
       home: const Loading(),
     );
   }

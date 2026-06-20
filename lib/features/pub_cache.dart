@@ -12,8 +12,8 @@ class PubsGeoJsonCache {
   static final PubsGeoJsonCache instance = PubsGeoJsonCache._();
 
   static const String _assetPath = 'assets/geojson/london-pubs.geojson';
-  static const double nearbyRenderRadiusMeters = 1000;
-  static const double nearbyRenderRefreshDistanceMeters = 500;
+  static const double nearbyRenderRadiusMeters = 2000;
+  static const double nearbyRenderRefreshDistanceMeters = 1000;
   static const double visitedCheckRadiusMeters = 100;
   static const double visitedCheckRefreshDistanceMeters = 5;
 
@@ -56,7 +56,8 @@ class PubsGeoJsonCache {
     }
 
     final String raw = await rootBundle.loadString(_assetPath);
-    final Map<String, dynamic> decoded = jsonDecode(raw) as Map<String, dynamic>;
+    final Map<String, dynamic> decoded =
+        jsonDecode(raw) as Map<String, dynamic>;
     final List<dynamic> featuresRaw =
         decoded['features'] as List<dynamic>? ?? const <dynamic>[];
 
@@ -84,39 +85,27 @@ class PubsGeoJsonCache {
           safeFeature['properties'] as Map<String, dynamic>?;
 
       final String id =
-          (safeFeature['id'] as String?) ??
-          properties?['@id'] as String? ??
-          '';
+          (safeFeature['id'] as String?) ?? properties?['@id'] as String? ?? '';
 
       parsed.add(
         PubFeature(
           id: id,
-          brand: FeatureService.stringOrNull(
-            properties?['brand'],
-          ),
-          name: FeatureService.stringOrNull(
-                properties?['name'],
-              ) ??
+          brand: FeatureService.stringOrNull(properties?['brand']),
+          name: FeatureService.stringOrNull(properties?['name']) ?? 'Unknown',
+          city:
+              FeatureService.stringOrNull(properties?['addr:city']) ??
               'Unknown',
-          city: FeatureService.stringOrNull(
-                properties?['addr:city'],
-              ) ??
+          street:
+              FeatureService.stringOrNull(properties?['addr:street']) ??
               'Unknown',
-          street: FeatureService.stringOrNull(
-                properties?['addr:street'],
-              ) ??
+          houseNumber:
+              FeatureService.stringOrNull(properties?['addr:housenumber']) ??
               'Unknown',
-          houseNumber: FeatureService.stringOrNull(
-                properties?['addr:housenumber'],
-              ) ??
+          postcode:
+              FeatureService.stringOrNull(properties?['addr:postcode']) ??
               'Unknown',
-          postcode: FeatureService.stringOrNull(
-                properties?['addr:postcode'],
-              ) ??
-              'Unknown',
-          wheelchair: FeatureService.stringOrNull(
-                properties?['wheelchair'],
-              ) ??
+          wheelchair:
+              FeatureService.stringOrNull(properties?['wheelchair']) ??
               'Unknown',
           coordinates: safeCoordinates,
         ),

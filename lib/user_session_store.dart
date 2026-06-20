@@ -22,12 +22,12 @@ class UserSessionData {
 
   factory UserSessionData.fromJson(Map<String, dynamic> json) {
     final String character = (json['character'] as String?)?.trim() ?? '';
-    final List<String> visitedPubs = ((json['visited_pubs'] as List<dynamic>?) ??
-            const <dynamic>[])
-        .whereType<String>()
-        .map((String value) => value.trim())
-        .where((String value) => value.isNotEmpty)
-        .toList(growable: false);
+    final List<String> visitedPubs =
+        ((json['visited_pubs'] as List<dynamic>?) ?? const <dynamic>[])
+            .whereType<String>()
+            .map((String value) => value.trim())
+            .where((String value) => value.isNotEmpty)
+            .toList(growable: false);
 
     if (character.isEmpty) {
       return UserSessionData(

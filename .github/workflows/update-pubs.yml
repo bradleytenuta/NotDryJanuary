@@ -1,0 +1,76 @@
+name: Update Pubs Data
+
+on:
+  schedule:
+    - cron: '0 0 * * 0' # Every Sunday at midnight
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  update-pubs:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check for open pull requests
+        id: check-prs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          open_prs=$(gh pr list --state open --json number --jq 'length')
+          echo "Number of open pull requests: $open_prs"
+          echo "count=$open_prs" >> $GITHUB_OUTPUT
+
+      - name: Set up Node.js
+        if: steps.check-prs.outputs.count == '0'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Fetch and convert pub data
+        if: steps.check-prs.outputs.count == '0'
+        run: |
+          node scripts/update_pubs.js
+
+      - name: Check for changes
+        if: steps.check-prs.outputs.count == '0'
+        id: verify-changes
+        run: |
+          if git diff --quiet assets/geojson/london-pubs.geojson; then
+            echo "No changes in pub data."
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "Changes detected in pub data."
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create Pull Request
+        if: steps.check-prs.outputs.count == '0' && steps.verify-changes.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Configure git
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          
+          # Create unique branch name
+          BRANCH_NAME="update-pubs-$(date +'%Y-%m-%d-%H%M%S')"
+          git checkout -b "$BRANCH_NAME"
+          
+          # Commit and push
+          git add assets/geojson/london-pubs.geojson
+          git commit -m "chore: update pubs data from Overpass API"
+          git push origin "$BRANCH_NAME"
+          
+          # Create pull request
+          gh pr create \
+            --title "chore: update pubs data from Overpass API" \
+            --body "Automated update of UK pub data from Overpass API." \
+            --base main \
+            --head "$BRANCH_NAME"
