@@ -342,7 +342,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
           ),
           MapButton(
             heroTag: 'map-credits-action-button',
-            icon: Icons.info_outline,
+            imagePath: 'assets/icons/credits.png',
             tooltip: 'Open credits',
             topOffset: 84,
             onPressed: () {

@@ -399,7 +399,7 @@ Future<void> _hideDefaultPlaceIcons(mbx.MapboxMap mapboxMap) async {
       <String, Object>{
         'showPointOfInterestLabels': false,
         'showTransitLabels': false,
-        'theme': themePreset,
+        'lightPreset': themePreset,
       },
     );
   } catch (error, stackTrace) {

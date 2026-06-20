@@ -70,6 +70,7 @@ flutter:
     - assets/icons/app-icon.png
     - assets/icons/lager-pint.png
     - assets/icons/account-settings.png
+    - assets/icons/credits.png
     - assets/icons/branding/greene-king.png
     - assets/icons/branding/wetherspoon.png
     - assets/icons/branding/fullers.png

@@ -44,7 +44,7 @@ class MapButton extends StatelessWidget {
                   filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
                   child: Container(
                     decoration: BoxDecoration(
-                      color: theme.colorScheme.surface.withOpacity(0.68),
+                      color: Colors.white.withOpacity(0.75),
                       shape: BoxShape.circle,
                       border: Border.all(
                         color: theme.colorScheme.primary.withOpacity(0.35),
@@ -90,7 +90,7 @@ class MapButton extends StatelessWidget {
             width: 44,
             height: 44,
             decoration: BoxDecoration(
-              color: theme.colorScheme.surface.withOpacity(0.68),
+              color: Colors.white.withOpacity(0.75),
               shape: BoxShape.circle,
               border: Border.all(
                 color: theme.colorScheme.primary.withOpacity(0.35),

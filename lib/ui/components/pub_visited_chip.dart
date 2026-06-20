@@ -34,7 +34,7 @@ class PubVisitedChip extends StatelessWidget {
                           height: 40,
                           padding: const EdgeInsets.fromLTRB(48, 8, 20, 8),
                           decoration: BoxDecoration(
-                            color: theme.colorScheme.surface.withOpacity(0.68),
+                            color: Colors.white.withOpacity(0.75),
                             borderRadius: BorderRadius.circular(24),
                             border: Border.all(
                               color: theme.colorScheme.primary.withOpacity(0.35),
@@ -47,7 +47,7 @@ class PubVisitedChip extends StatelessWidget {
                               Text(
                                 '$visitedCount pubs visited',
                                 style: theme.textTheme.bodyMedium?.copyWith(
-                                  color: theme.colorScheme.onSurface,
+                                  color: const Color(0xFF0F172A),
                                   fontWeight: FontWeight.bold,
                                   letterSpacing: 0.5,
                                 ),

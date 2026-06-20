@@ -12,6 +12,7 @@ Future<void> showPubDetailsModal({
     isDismissible: true,
     enableDrag: true,
     useSafeArea: true,
+    showDragHandle: false,
     barrierColor: Colors.black.withOpacity(0.35),
     builder: (BuildContext context) {
       return _PubDetailsBottomSheet(featureDetails: featureDetails);
