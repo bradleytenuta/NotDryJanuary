@@ -42,7 +42,7 @@ class _LoadingState extends State<Loading> {
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 8.0, sigmaY: 8.0),
               child: Container(
-                color: theme.scaffoldBackgroundColor.withOpacity(0.5),
+                color: theme.scaffoldBackgroundColor.withValues(alpha: 0.5),
                 alignment: Alignment.center,
                 child: Transform.scale(
                   scale: 2,

@@ -20,12 +20,6 @@ class Credits extends StatelessWidget {
           children: const <TableRow>[
             TableRow(
               children: <Widget>[
-                _CreditsHeaderCell(text: 'Components'),
-                _CreditsHeaderCell(text: 'Credit'),
-              ],
-            ),
-            TableRow(
-              children: <Widget>[
                 _CreditsCell(text: 'Models'),
                 _CreditsCell(text: 'Poly Pizza (Quaternius)'),
               ],
