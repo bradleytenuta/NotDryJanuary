@@ -45,7 +45,7 @@ class PubVisitedChip extends StatelessWidget {
                             mainAxisSize: MainAxisSize.min,
                             children: <Widget>[
                               Text(
-                                '$visitedCount pubs visited',
+                                'Pubs: $visitedCount',
                                 style: theme.textTheme.bodyMedium?.copyWith(
                                   color: const Color(0xFF0F172A),
                                   fontWeight: FontWeight.bold,

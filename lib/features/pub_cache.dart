@@ -12,8 +12,8 @@ class PubsGeoJsonCache {
   static final PubsGeoJsonCache instance = PubsGeoJsonCache._();
 
   static const String _assetPath = 'assets/geojson/london-pubs.geojson';
-  static const double nearbyRenderRadiusMeters = 1000;
-  static const double nearbyRenderRefreshDistanceMeters = 500;
+  static const double nearbyRenderRadiusMeters = 2000;
+  static const double nearbyRenderRefreshDistanceMeters = 1000;
   static const double visitedCheckRadiusMeters = 100;
   static const double visitedCheckRefreshDistanceMeters = 5;
 

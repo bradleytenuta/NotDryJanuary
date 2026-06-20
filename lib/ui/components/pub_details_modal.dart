@@ -25,11 +25,50 @@ class _PubDetailsBottomSheet extends StatelessWidget {
 
   final PubFeature featureDetails;
 
+  String getAddress() {
+    final String street = featureDetails.street;
+    final String houseNumber = featureDetails.houseNumber;
+    final String city = featureDetails.city;
+    final String postcode = featureDetails.postcode;
+
+    bool isMissing(String? val) {
+      if (val == null) return true;
+      final String trimmed = val.trim();
+      return trimmed.isEmpty || trimmed.toLowerCase() == 'unknown';
+    }
+
+    final String streetVal = isMissing(street) ? '' : street.trim();
+    final String houseNumberVal = isMissing(houseNumber) ? '' : houseNumber.trim();
+    final String cityVal = isMissing(city) ? '' : city.trim();
+    final String postcodeVal = isMissing(postcode) ? '' : postcode.trim();
+
+    String streetAddress = '';
+    if (streetVal.isNotEmpty && houseNumberVal.isNotEmpty) {
+      streetAddress = '$streetVal $houseNumberVal';
+    } else if (streetVal.isNotEmpty) {
+      streetAddress = streetVal;
+    } else if (houseNumberVal.isNotEmpty) {
+      streetAddress = houseNumberVal;
+    }
+
+    String cityPart = '';
+    if (streetAddress.isNotEmpty && cityVal.isNotEmpty) {
+      cityPart = '$streetAddress, $cityVal';
+    } else if (streetAddress.isNotEmpty) {
+      cityPart = streetAddress;
+    } else if (cityVal.isNotEmpty) {
+      cityPart = cityVal;
+    }
+
+    return (cityPart.isNotEmpty && postcodeVal.isNotEmpty)
+        ? '$cityPart - $postcodeVal'
+        : (cityPart.isNotEmpty ? cityPart : postcodeVal);
+  }
+
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
-    final String address =
-        '${featureDetails.street} ${featureDetails.houseNumber}, ${featureDetails.city} - ${featureDetails.postcode}';
+    final String address = getAddress();
 
     return ClipRRect(
       borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
@@ -100,46 +139,51 @@ class _PubDetailsBottomSheet extends StatelessWidget {
                   const SizedBox(height: 16),
                   const Divider(height: 1),
                   const SizedBox(height: 16),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: <Widget>[
-                      Icon(
-                        Icons.location_on,
-                        color: theme.colorScheme.primary,
-                        size: 20,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          address,
+                  if (address.isNotEmpty) ...[
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        Icon(
+                          Icons.location_on,
+                          color: theme.colorScheme.primary,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            address,
+                            style: theme.textTheme.bodyMedium?.copyWith(
+                              color: theme.colorScheme.onSurface.withOpacity(0.8),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                  if (featureDetails.wheelchair.trim().isNotEmpty &&
+                      featureDetails.wheelchair.trim().toLowerCase() != 'unknown') ...[
+                    Row(
+                      children: <Widget>[
+                        Icon(
+                          featureDetails.wheelchair.toLowerCase() == 'yes'
+                              ? Icons.accessible
+                              : Icons.not_accessible,
+                          color: featureDetails.wheelchair.toLowerCase() == 'yes'
+                              ? Colors.green
+                              : theme.colorScheme.error,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Wheelchair Access: ${featureDetails.wheelchair}',
                           style: theme.textTheme.bodyMedium?.copyWith(
                             color: theme.colorScheme.onSurface.withOpacity(0.8),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: <Widget>[
-                      Icon(
-                        featureDetails.wheelchair.toLowerCase() == 'yes'
-                            ? Icons.accessible
-                            : Icons.not_accessible,
-                        color: featureDetails.wheelchair.toLowerCase() == 'yes'
-                            ? Colors.green
-                            : theme.colorScheme.error,
-                        size: 20,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Wheelchair Access: ${featureDetails.wheelchair}',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: theme.colorScheme.onSurface.withOpacity(0.8),
-                        ),
-                      ),
-                    ],
-                  ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ),

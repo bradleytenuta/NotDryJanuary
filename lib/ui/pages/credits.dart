@@ -43,25 +43,6 @@ class Credits extends StatelessWidget {
   }
 }
 
-class _CreditsHeaderCell extends StatelessWidget {
-  const _CreditsHeaderCell({required this.text});
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Text(
-        text,
-        style: Theme.of(
-          context,
-        ).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700),
-      ),
-    );
-  }
-}
-
 class _CreditsCell extends StatelessWidget {
   const _CreditsCell({required this.text});
 

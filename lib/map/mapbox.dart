@@ -225,7 +225,7 @@ typedef MapboxMapProviderBuilder =
     });
 
 const String _mapboxStandardBasemapImportId = 'basemap';
-const double _maxZoomOutLevel = 16;
+const double _maxZoomOutLevel = 14;
 
 Widget mapboxMap({
   required ValueChanged<MapboxMapController> onControllerCreated,

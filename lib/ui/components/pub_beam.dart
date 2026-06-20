@@ -107,8 +107,8 @@ const List<String> nearbyPubsLayerIds = <String>[
   unvisitedNearbyPubsTopLayerId,
 ];
 
-const double nearbyPubsRefreshDistanceMeters = 500;
-const double _nearbyPubsRadiusMeters = 1000;
+const double nearbyPubsRefreshDistanceMeters = 1000;
+const double _nearbyPubsRadiusMeters = 2000;
 const String _debugTargetFeatureId = 'way/263674306';
 const double _debugExtrusionHeightMeters = 150;
 const int _visitedExtrusionColor = 0xFF2E7D32;
