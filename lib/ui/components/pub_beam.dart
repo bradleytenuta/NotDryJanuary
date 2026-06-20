@@ -23,9 +23,81 @@ const String unvisitedNearbyPubsMiddleLayerId =
     'nearby-pubs-unvisited-3d-middle-layer';
 const String unvisitedNearbyPubsTopLayerId =
     'nearby-pubs-unvisited-3d-top-layer';
-const String _greeneKingBrandValue = 'Greene King';
-const String _greeneKingBrandAssetPath =
-    'assets/icons/branding/greene-king.png';
+class BrandConfig {
+  final String key;
+  final List<String> matchNames;
+  final String assetPath;
+  final double iconSize;
+  final double symbolZOffset;
+
+  const BrandConfig({
+    required this.key,
+    required this.matchNames,
+    required this.assetPath,
+    this.iconSize = 0.2,
+    this.symbolZOffset = 175.0,
+  });
+
+  bool matches(String? brandName) {
+    if (brandName == null) return false;
+    final String normalized = brandName.trim().toLowerCase();
+    return matchNames.any((String name) => name.toLowerCase() == normalized);
+  }
+}
+
+const List<BrandConfig> _brands = <BrandConfig>[
+  BrandConfig(
+    key: 'greene_king',
+    matchNames: <String>['Greene King'],
+    assetPath: 'assets/icons/branding/greene-king.png',
+  ),
+  BrandConfig(
+    key: 'wetherspoon',
+    matchNames: <String>['Wetherspoon', 'Wetherspoons', 'J D Wetherspoon', 'JD Wetherspoon'],
+    assetPath: 'assets/icons/branding/wetherspoon.png',
+  ),
+  BrandConfig(
+    key: 'fullers',
+    matchNames: <String>["Fuller's", 'Fuller Smith & Turner', 'Fullers'],
+    assetPath: 'assets/icons/branding/fullers.png',
+  ),
+  BrandConfig(
+    key: 'marstons',
+    matchNames: <String>["Marston's", 'Marstons'],
+    assetPath: 'assets/icons/branding/marstons.png',
+  ),
+  BrandConfig(
+    key: 'hungry_horse',
+    matchNames: <String>['Hungry Horse'],
+    assetPath: 'assets/icons/branding/hungry-horse.png',
+  ),
+  BrandConfig(
+    key: 'vintage_inns',
+    matchNames: <String>['Vintage Inns'],
+    assetPath: 'assets/icons/branding/vintage-inns.png',
+  ),
+  BrandConfig(
+    key: 'hall_woodhouse',
+    matchNames: <String>['Hall & Woodhouse', 'Hall and Woodhouse'],
+    assetPath: 'assets/icons/branding/hall-woodhouse.png',
+  ),
+  BrandConfig(
+    key: 'ember_inns',
+    matchNames: <String>['Ember Inns'],
+    assetPath: 'assets/icons/branding/ember-inns.png',
+  ),
+  BrandConfig(
+    key: 'chef_brewer',
+    matchNames: <String>['Chef & Brewer', 'Chef and Brewer'],
+    assetPath: 'assets/icons/branding/chef-brewer.png',
+  ),
+  BrandConfig(
+    key: 'brewers_fayre',
+    matchNames: <String>['Brewers Fayre'],
+    assetPath: 'assets/icons/branding/brewers-fayre.png',
+  ),
+];
+
 const List<String> nearbyPubsLayerIds = <String>[
   visitedNearbyPubsBottomLayerId,
   visitedNearbyPubsMiddleLayerId,
@@ -41,12 +113,10 @@ const String _debugTargetFeatureId = 'way/263674306';
 const double _debugExtrusionHeightMeters = 150;
 const int _visitedExtrusionColor = 0xFF2E7D32;
 const int _unvisitedExtrusionColor = 0xFFD32F2F;
-const double _greeneKingSymbolZOffsetMeters = 175;
-const double _greeneKingIconSize = 0.2;
 
-final Expando<mbx.PointAnnotationManager> _greeneKingAnnotationManagers =
-    Expando<mbx.PointAnnotationManager>('greeneKingAnnotationManagers');
-Uint8List? _cachedGreeneKingAnnotationImage;
+final Expando<mbx.PointAnnotationManager> _brandAnnotationManagers =
+    Expando<mbx.PointAnnotationManager>('brandAnnotationManagers');
+final Map<String, Uint8List> _cachedBrandImages = <String, Uint8List>{};
 
 Future<bool> addNearbyPubFeatures(
   mbx.MapboxMap mapboxMap, {
@@ -94,7 +164,7 @@ Future<bool> addNearbyPubFeatures(
       'Mapbox pubs debug: nearbyCount=${nearbyMapData.nearbyFeatureIds.length}, '
       'nearbyVisitedCount=${nearbyMapData.visitedNearbyFeatureIds.length}, '
       'nearbyUnvisitedCount=${nearbyMapData.unvisitedNearbyFeatureIds.length}, '
-      'greeneKingCount=${nearbyFeatures.where((PubFeature feature) => _isGreeneKing(feature.brand)).length}, '
+      'brandPubsCount=${nearbyFeatures.where((PubFeature feature) => _brands.any((BrandConfig b) => b.matches(feature.brand))).length}, '
       'sessionVisitedCount=${userSession.visitedPubs.length}, '
       'target($_debugTargetFeatureId)Present=${nearbyMapData.nearbyFeatureIds.contains(_debugTargetFeatureId)}, '
       'origin=(${filterOrigin.latitude}, ${filterOrigin.longitude}), '
@@ -189,7 +259,7 @@ Future<bool> addNearbyPubFeatures(
       opacity: 0.16,
     );
 
-    await _upsertGreeneKingOverlay(
+    await _upsertBrandOverlays(
       mapboxMap: mapboxMap,
       features: nearbyFeatures,
     );
@@ -202,20 +272,30 @@ Future<bool> addNearbyPubFeatures(
   }
 }
 
-Future<void> _upsertGreeneKingOverlay({
+Future<void> _upsertBrandOverlays({
   required mbx.MapboxMap mapboxMap,
   required List<PubFeature> features,
 }) async {
   try {
     final mbx.PointAnnotationManager manager =
-        await _getGreeneKingAnnotationManager(mapboxMap);
+        await _getBrandAnnotationManager(mapboxMap);
     await manager.deleteAll();
 
-    final Uint8List image = await _loadGreeneKingAnnotationImage();
-    final List<mbx.PointAnnotationOptions> annotations = features
-        .where((PubFeature feature) => _isGreeneKing(feature.brand))
-        .map(
-          (PubFeature feature) => mbx.PointAnnotationOptions(
+    final List<mbx.PointAnnotationOptions> annotations = <mbx.PointAnnotationOptions>[];
+
+    for (final BrandConfig brand in _brands) {
+      final List<PubFeature> brandPubs = features
+          .where((PubFeature feature) => brand.matches(feature.brand))
+          .toList();
+
+      if (brandPubs.isEmpty) {
+        continue;
+      }
+
+      final Uint8List image = await _loadBrandImage(brand);
+      for (final PubFeature feature in brandPubs) {
+        annotations.add(
+          mbx.PointAnnotationOptions(
             geometry: mbx.Point(
               coordinates: mbx.Position(
                 _featureCenter(feature.coordinates)[0],
@@ -224,28 +304,29 @@ Future<void> _upsertGreeneKingOverlay({
             ),
             image: image,
             iconAnchor: mbx.IconAnchor.BOTTOM,
-            iconSize: _greeneKingIconSize,
+            iconSize: brand.iconSize,
             iconOpacity: 0.6,
             iconEmissiveStrength: 1,
-            symbolZOffset: _greeneKingSymbolZOffsetMeters,
+            symbolZOffset: brand.symbolZOffset,
           ),
-        )
-        .toList(growable: false);
+        );
+      }
+    }
 
     if (annotations.isNotEmpty) {
       await manager.createMulti(annotations);
     }
   } catch (error, stackTrace) {
-    debugPrint('Mapbox Greene King overlay debug error: $error');
-    debugPrint('Mapbox Greene King overlay debug stackTrace: $stackTrace');
+    debugPrint('Mapbox Brand overlay debug error: $error');
+    debugPrint('Mapbox Brand overlay debug stackTrace: $stackTrace');
   }
 }
 
-Future<mbx.PointAnnotationManager> _getGreeneKingAnnotationManager(
+Future<mbx.PointAnnotationManager> _getBrandAnnotationManager(
   mbx.MapboxMap mapboxMap,
 ) async {
   final mbx.PointAnnotationManager? existingManager =
-      _greeneKingAnnotationManagers[mapboxMap];
+      _brandAnnotationManagers[mapboxMap];
   if (existingManager != null) {
     return existingManager;
   }
@@ -254,24 +335,20 @@ Future<mbx.PointAnnotationManager> _getGreeneKingAnnotationManager(
       .createPointAnnotationManager();
   await manager.setIconAllowOverlap(true);
   await manager.setIconIgnorePlacement(true);
-  _greeneKingAnnotationManagers[mapboxMap] = manager;
+  _brandAnnotationManagers[mapboxMap] = manager;
   return manager;
 }
 
-Future<Uint8List> _loadGreeneKingAnnotationImage() async {
-  final Uint8List? cached = _cachedGreeneKingAnnotationImage;
+Future<Uint8List> _loadBrandImage(BrandConfig brand) async {
+  final Uint8List? cached = _cachedBrandImages[brand.key];
   if (cached != null) {
     return cached;
   }
 
-  final ByteData imageData = await rootBundle.load(_greeneKingBrandAssetPath);
+  final ByteData imageData = await rootBundle.load(brand.assetPath);
   final Uint8List output = imageData.buffer.asUint8List();
-  _cachedGreeneKingAnnotationImage = output;
+  _cachedBrandImages[brand.key] = output;
   return output;
-}
-
-bool _isGreeneKing(String? brand) {
-  return brand?.trim().toLowerCase() == _greeneKingBrandValue.toLowerCase();
 }
 
 List<double> _featureCenter(List<List<List<double>>> coordinates) {

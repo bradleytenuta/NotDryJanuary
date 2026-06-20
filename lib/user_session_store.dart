@@ -5,7 +5,10 @@ import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
 
 class UserSessionData {
-  const UserSessionData({required this.character, required this.visitedPubs});
+  const UserSessionData({
+    required this.character,
+    required this.visitedPubs,
+  });
 
   final String character;
   final List<String> visitedPubs;
@@ -33,7 +36,10 @@ class UserSessionData {
       );
     }
 
-    return UserSessionData(character: character, visitedPubs: visitedPubs);
+    return UserSessionData(
+      character: character,
+      visitedPubs: visitedPubs,
+    );
   }
 }
 

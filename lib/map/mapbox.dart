@@ -240,6 +240,7 @@ Widget mapboxMap({
   bool isMapLoaded = false;
 
   return mbx.MapWidget(
+    styleUri: 'mapbox://styles/mapbox/standard',
     // ignore: deprecated_member_use
     cameraOptions: mbx.CameraOptions(
       center: mbx.Point(
@@ -297,7 +298,6 @@ Widget mapboxMap({
         }());
       }
     },
-    // ignore: deprecated_member_use
     onTapListener: (mbx.MapContentGestureContext context) {
       final mbx.MapboxMap? mapboxMap = createdMap;
       if (mapboxMap == null) {
@@ -391,11 +391,15 @@ String? _stringFrom(Object? value) {
 
 Future<void> _hideDefaultPlaceIcons(mbx.MapboxMap mapboxMap) async {
   try {
+    final int hour = DateTime.now().hour;
+    final String themePreset = (hour >= 6 && hour < 18) ? 'day' : 'night';
+
     await mapboxMap.style.setStyleImportConfigProperties(
       _mapboxStandardBasemapImportId,
       <String, Object>{
         'showPointOfInterestLabels': false,
         'showTransitLabels': false,
+        'theme': themePreset,
       },
     );
   } catch (error, stackTrace) {

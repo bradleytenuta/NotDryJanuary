@@ -328,7 +328,7 @@ class _MapScreenState extends State<MapScreen> with WidgetsBindingObserver {
           const PubVisitedChip(),
           MapButton(
             heroTag: 'map-account-action-button',
-            icon: Icons.manage_accounts,
+            imagePath: 'assets/icons/account-settings.png',
             tooltip: 'Open account',
             onPressed: () {
               Navigator.of(context)

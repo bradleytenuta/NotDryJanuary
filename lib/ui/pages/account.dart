@@ -36,6 +36,8 @@ class _AccountState extends State<Account> {
 
   @override
   Widget build(BuildContext context) {
+    final ThemeData theme = Theme.of(context);
+
     return Scaffold(
       appBar: AppBar(
         leading: BackButton(
@@ -92,19 +94,56 @@ class _AccountState extends State<Account> {
                   children: <Widget>[
                     Text(
                       'Statistics',
-                      style: Theme.of(context).textTheme.titleMedium,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 8),
-                    Text('Number of pubs visited: ${visitedPubNames.length}'),
+                    Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Row(
+                          children: <Widget>[
+                            Icon(
+                              Icons.emoji_events,
+                              color: theme.colorScheme.primary,
+                              size: 36,
+                            ),
+                            const SizedBox(width: 16),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: <Widget>[
+                                Text(
+                                  'Pubs Visited',
+                                  style: theme.textTheme.bodyMedium?.copyWith(
+                                    color: theme.colorScheme.onSurface
+                                        .withOpacity(0.68),
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  '${visitedPubNames.length}',
+                                  style: theme.textTheme.headlineMedium?.copyWith(
+                                    fontWeight: FontWeight.bold,
+                                    color: theme.colorScheme.primary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                     const SizedBox(height: 20),
                     Text(
                       'My Character',
-                      style: Theme.of(context).textTheme.titleMedium,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     InputDecorator(
                       decoration: const InputDecoration(
-                        border: OutlineInputBorder(),
                         contentPadding: EdgeInsets.symmetric(
                           horizontal: 12,
                           vertical: 6,
@@ -139,7 +178,9 @@ class _AccountState extends State<Account> {
                     const SizedBox(height: 20),
                     Text(
                       'My visited pubs',
-                      style: Theme.of(context).textTheme.titleMedium,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Expanded(
@@ -153,7 +194,16 @@ class _AccountState extends State<Account> {
                               itemBuilder: (BuildContext context, int index) {
                                 return ListTile(
                                   contentPadding: EdgeInsets.zero,
-                                  title: Text(visitedPubNames[index]),
+                                  leading: Icon(
+                                    Icons.sports_bar,
+                                    color: theme.colorScheme.primary,
+                                  ),
+                                  title: Text(
+                                    visitedPubNames[index],
+                                    style: theme.textTheme.bodyMedium?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
                                 );
                               },
                             ),
